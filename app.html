@@ -3,105 +3,139 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Manager</title>
+  <title>Mission Runner</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .container { background: white; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 500px; width: 100%; padding: 32px; }
-    h1 { color: #333; margin-bottom: 24px; text-align: center; font-size: 28px; }
-    .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-    input[type="text"] { flex: 1; padding: 12px 16px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; }
-    input[type="text"]:focus { border-color: #667eea; }
-    button { padding: 12px 24px; background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; font-family: inherit; }
-    .task-list { display: flex; flex-direction: column; gap: 10px; }
-    .task-item { display: flex; align-items: center; gap: 12px; padding: 14px; background: #f5f5f5; border-radius: 8px; }
-    .task-item.completed .task-text { text-decoration: line-through; color: #999; }
-    input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; accent-color: #667eea; }
-    .task-text { flex: 1; color: #333; font-size: 14px; }
-    .delete-btn { background: #ff6b6b; padding: 8px 12px; font-size: 12px; border-radius: 6px; color: white; border: none; cursor: pointer; font-family: inherit; font-weight: 600; }
-    .empty-state { text-align: center; color: #999; padding: 40px 20px; font-size: 14px; }
-    .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 24px; padding-top: 24px; border-top: 2px solid #e0e0e0; }
-    .stat { text-align: center; }
-    .stat-value { font-size: 24px; font-weight: 700; color: #667eea; }
-    .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; display: flex; flex-direction: column; }
+    header { background: #fff; border-bottom: 1px solid #e8e8e3; padding: 0 20px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; }
+    .logo { display: flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 700; color: #1a1a1a; }
+    .logo-icon { width: 30px; height: 30px; background: linear-gradient(135deg, #7c3aed, #a855f7); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 15px; }
+    .badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; background: #f5f5f0; border: 1px solid #e8e8e3; padding: 4px 12px; border-radius: 20px; }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; flex-shrink: 0; }
+    .dot.on { background: #22c55e; }
+    main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px 20px; }
+    .card { background: #fff; border: 1px solid #e8e8e3; border-radius: 16px; padding: 32px 28px; width: 100%; max-width: 420px; }
+    .card-title { font-size: 20px; font-weight: 700; color: #1a1a1a; margin-bottom: 6px; }
+    .card-sub { font-size: 13px; color: #6b7280; margin-bottom: 24px; }
+    .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    label { font-size: 12px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+    input { background: #f9f9f7; border: 1px solid #e8e8e3; border-radius: 10px; padding: 11px 14px; font-size: 14px; color: #1a1a1a; font-family: inherit; outline: none; width: 100%; }
+    input:focus { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168,85,247,0.1); }
+    .btn { width: 100%; padding: 12px; background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; border: none; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; font-family: inherit; margin-top: 8px; }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    .status { border-radius: 10px; padding: 11px 14px; font-size: 13px; margin-top: 12px; display: none; }
+    .status.show { display: block; }
+    .status.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .status.loading { background: #faf5ff; color: #6d28d9; border: 1px solid #e9d5ff; }
+    .dashboard { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 16px; }
+    .welcome-card { background: #fff; border: 1px solid #e8e8e3; border-radius: 16px; padding: 32px 28px; text-align: center; }
+    .welcome-icon { font-size: 40px; margin-bottom: 16px; }
+    .welcome-title { font-size: 22px; font-weight: 700; color: #1a1a1a; margin-bottom: 8px; }
+    .welcome-repo { font-size: 14px; color: #7c3aed; font-weight: 600; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 8px 14px; display: inline-block; margin-top: 4px; }
+    .welcome-sub { font-size: 13px; color: #6b7280; margin-top: 12px; }
+    footer { text-align: center; padding: 20px; }
+    .reset-link { font-size: 12px; color: #d1d5db; cursor: pointer; text-decoration: underline; background: none; border: none; font-family: inherit; }
+    .reset-link:hover { color: #9ca3af; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>✓ Task Manager</h1>
-    <div class="input-group">
-      <input type="text" id="taskInput" placeholder="Add a new task...">
-      <button onclick="addTask()">Add</button>
-    </div>
-    <div class="task-list" id="taskList">
-      <div class="empty-state">No tasks yet. Add one above to get started!</div>
-    </div>
-    <div class="stats">
-      <div class="stat">
-        <div class="stat-value" id="totalCount">0</div>
-        <div class="stat-label">Total Tasks</div>
-      </div>
-      <div class="stat">
-        <div class="stat-value" id="completedCount">0</div>
-        <div class="stat-label">Completed</div>
-      </div>
-    </div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">M</div>
+    Mission Runner
   </div>
+  <div class="badge">
+    <div class="dot" id="dot"></div>
+    <span id="badgeLabel">Not connected</span>
+  </div>
+</header>
 
-  <script>
-    let tasks = JSON.parse(localStorage.getItem('mm_tasks') || '[]');
+<main id="main"></main>
 
-    function saveTasks() {
-      localStorage.setItem('mm_tasks', JSON.stringify(tasks));
-      render();
+<footer>
+  <button class="reset-link" onclick="reset()">Reset Connection</button>
+</footer>
+
+<script>
+  var token = localStorage.getItem('mr_token');
+  var repo = localStorage.getItem('mr_repo');
+
+  function showSetup(msg) {
+    document.getElementById('main').innerHTML =
+      '<div class="card">' +
+        '<div class="card-title">Connect to GitHub</div>' +
+        '<div class="card-sub">Enter your credentials once. Mission Runner will remember them.</div>' +
+        '<div class="field"><label>GitHub Token</label><input type="password" id="tkn" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" /></div>' +
+        '<div class="field"><label>Repository</label><input type="text" id="rep" placeholder="madnessgate44-debug/Meshmesh" /></div>' +
+        '<button class="btn" id="connectBtn" onclick="connect()">Connect</button>' +
+        '<div class="status' + (msg ? ' show error' : '') + '" id="st">' + (msg || '') + '</div>' +
+      '</div>';
+  }
+
+  function showDashboard(fullName) {
+    document.getElementById('dot').className = 'dot on';
+    document.getElementById('badgeLabel').textContent = fullName;
+    document.getElementById('main').innerHTML =
+      '<div class="dashboard">' +
+        '<div class="welcome-card">' +
+          '<div class="welcome-icon">🚀</div>' +
+          '<div class="welcome-title">Connected and ready.</div>' +
+          '<div class="welcome-repo">' + fullName + '</div>' +
+          '<div class="welcome-sub">Mission Runner is live and watching your repo.</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  async function connect() {
+    var t = document.getElementById('tkn').value.trim();
+    var r = document.getElementById('rep').value.trim();
+    if (!t || !r) { showSt('Fill in both fields.', 'error'); return; }
+    var btn = document.getElementById('connectBtn');
+    btn.disabled = true;
+    showSt('Connecting…', 'loading');
+    try {
+      var res = await fetch('https://api.github.com/repos/' + r, {
+        headers: { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      var data = await res.json();
+      if (!res.ok) { showSt('GitHub error: ' + data.message, 'error'); btn.disabled = false; return; }
+      localStorage.setItem('mr_token', t);
+      localStorage.setItem('mr_repo', r);
+      token = t; repo = r;
+      showDashboard(data.full_name);
+    } catch(e) {
+      showSt('Connection failed: ' + e.message, 'error');
+      btn.disabled = false;
     }
+  }
 
-    function addTask() {
-      const input = document.getElementById('taskInput');
-      const text = input.value.trim();
-      if (!text) return;
-      tasks.push({ id: Date.now(), text: text, completed: false });
-      input.value = '';
-      saveTasks();
+  function showSt(msg, type) {
+    var el = document.getElementById('st');
+    if (!el) return;
+    el.className = 'status show ' + type;
+    el.textContent = msg;
+  }
+
+  async function autoConnect() {
+    try {
+      var res = await fetch('https://api.github.com/repos/' + repo, {
+        headers: { Authorization: 'Bearer ' + token, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+      });
+      var data = await res.json();
+      if (res.ok) { showDashboard(data.full_name); } else { showSetup('Session expired. Please reconnect.'); }
+    } catch(e) { showSetup('Could not connect: ' + e.message); }
+  }
+
+  function reset() {
+    if (confirm('Reset connection and clear saved credentials?')) {
+      localStorage.removeItem('mr_token');
+      localStorage.removeItem('mr_repo');
+      location.reload();
     }
+  }
 
-    function deleteTask(id) {
-      tasks = tasks.filter(function(t) { return t.id !== id; });
-      saveTasks();
-    }
-
-    function toggleTask(id) {
-      var task = tasks.find(function(t) { return t.id === id; });
-      if (task) task.completed = !task.completed;
-      saveTasks();
-    }
-
-    function render() {
-      var list = document.getElementById('taskList');
-      var total = document.getElementById('totalCount');
-      var completed = document.getElementById('completedCount');
-
-      if (tasks.length === 0) {
-        list.innerHTML = '<div class="empty-state">No tasks yet. Add one above to get started!</div>';
-      } else {
-        list.innerHTML = tasks.map(function(t) {
-          return '<div class="task-item ' + (t.completed ? 'completed' : '') + '">' +
-            '<input type="checkbox" ' + (t.completed ? 'checked' : '') + ' onchange="toggleTask(' + t.id + ')">' +
-            '<span class="task-text">' + t.text + '</span>' +
-            '<button class="delete-btn" onclick="deleteTask(' + t.id + ')">Delete</button>' +
-          '</div>';
-        }).join('');
-      }
-
-      total.textContent = tasks.length;
-      completed.textContent = tasks.filter(function(t) { return t.completed; }).length;
-    }
-
-    document.getElementById('taskInput').addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') addTask();
-    });
-
-    render();
-  </script>
+  if (token && repo) { autoConnect(); } else { showSetup(); }
+</script>
 </body>
 </html>
