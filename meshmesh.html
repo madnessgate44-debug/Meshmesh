@@ -1,351 +1,255 @@
-import { useState } from "react";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meshmesh</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; color: #1a1a1a; min-height: 100vh; display: flex; flex-direction: column; }
+  header { background: #fff; border-bottom: 1px solid #e8e8e3; padding: 0 24px; height: 56px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 10; }
+  .logo { display: flex; align-items: center; gap: 10px; font-size: 15px; font-weight: 600; color: #1a1a1a; }
+  .logo-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #7c3aed, #a855f7); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; }
+  .connection-badge { display: flex; align-items: center; gap: 6px; font-size: 12px; color: #6b7280; background: #f5f5f0; border: 1px solid #e8e8e3; padding: 4px 10px; border-radius: 20px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #d1d5db; }
+  .dot.connected { background: #22c55e; }
+  main { flex: 1; max-width: 860px; width: 100%; margin: 0 auto; padding: 32px 20px; display: flex; flex-direction: column; gap: 16px; }
+  .setup-card { background: #fff; border: 1px solid #e8e8e3; border-radius: 16px; padding: 24px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 14px; }
+  .input-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .input-group { display: flex; flex-direction: column; gap: 5px; flex: 1; min-width: 180px; }
+  label { font-size: 12px; color: #6b7280; font-weight: 500; }
+  input[type="text"], input[type="password"], textarea { background: #f9f9f7; border: 1px solid #e8e8e3; border-radius: 10px; padding: 10px 13px; font-size: 14px; color: #1a1a1a; font-family: inherit; outline: none; width: 100%; }
+  input:focus, textarea:focus { border-color: #a855f7; box-shadow: 0 0 0 3px rgba(168,85,247,0.1); }
+  textarea { resize: vertical; min-height: 80px; line-height: 1.5; }
+  .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 18px; border-radius: 10px; font-size: 14px; font-weight: 500; cursor: pointer; border: none; font-family: inherit; white-space: nowrap; }
+  .btn-primary { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  .btn-ghost { background: #f5f5f0; color: #374151; border: 1px solid #e8e8e3; }
+  .tabs { display: flex; gap: 4px; background: #fff; border: 1px solid #e8e8e3; border-radius: 12px; padding: 4px; }
+  .tab { flex: 1; padding: 9px 16px; border-radius: 9px; border: none; background: transparent; font-size: 14px; font-weight: 500; color: #6b7280; cursor: pointer; font-family: inherit; }
+  .tab.active { background: linear-gradient(135deg, #7c3aed, #a855f7); color: white; }
+  .panel { background: #fff; border: 1px solid #e8e8e3; border-radius: 16px; padding: 24px; display: none; }
+  .panel.active { display: block; }
+  .updater-form { display: flex; flex-direction: column; gap: 14px; }
+  .file-hint { font-size: 12px; color: #9ca3af; margin-top: 3px; }
+  .action-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .status-box { border-radius: 10px; padding: 12px 15px; font-size: 13px; line-height: 1.5; display: none; }
+  .status-box.show { display: block; }
+  .status-box.success { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .status-box.error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .status-box.loading { background: #faf5ff; color: #6d28d9; border: 1px solid #e9d5ff; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(109,40,217,0.3); border-top-color: #7c3aed; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .report-controls { display: flex; gap: 10px; margin-bottom: 20px; }
+  .report-section { margin-bottom: 24px; }
+  .section-header { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #f0f0eb; display: flex; align-items: center; gap: 7px; }
+  .stat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; }
+  .stat-card { background: #f9f9f7; border: 1px solid #e8e8e3; border-radius: 10px; padding: 12px 14px; }
+  .stat-value { font-size: 20px; font-weight: 700; color: #7c3aed; line-height: 1.2; }
+  .stat-label { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+  .list-items { display: flex; flex-direction: column; gap: 7px; }
+  .list-item { background: #f9f9f7; border: 1px solid #e8e8e3; border-radius: 9px; padding: 10px 13px; font-size: 13px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .list-item-name { font-weight: 500; color: #1a1a1a; }
+  .list-item-meta { font-size: 11px; color: #9ca3af; text-align: right; flex-shrink: 0; }
+  .tag { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 500; }
+  .tag-purple { background: #faf5ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+  .tag-green { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+  .tag-blue { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+  .tag-gray { background: #f9fafb; color: #374151; border: 1px solid #e5e7eb; }
+  .ai-summary { background: linear-gradient(135deg, #faf5ff, #f5f0ff); border: 1px solid #e9d5ff; border-radius: 12px; padding: 16px 18px; font-size: 13.5px; line-height: 1.7; color: #374151; margin-bottom: 20px; }
+  .ai-summary-label { font-size: 11px; font-weight: 600; color: #7c3aed; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+  .empty-state { text-align: center; padding: 48px 24px; color: #9ca3af; }
+  .empty-icon { font-size: 36px; margin-bottom: 12px; }
+  .empty-title { font-size: 15px; font-weight: 600; color: #374151; margin-bottom: 6px; }
+  .diff-box { background: #1a1a2e; border-radius: 10px; padding: 16px; font-family: monospace; font-size: 12px; line-height: 1.6; color: #e2e8f0; max-height: 260px; overflow-y: auto; display: none; }
+  .diff-box.show { display: block; }
+  .diff-add { color: #4ade80; }
+  .diff-remove { color: #f87171; }
+  .diff-meta { color: #94a3b8; }
+  @media (max-width: 600px) { main { padding: 20px 14px; } .input-row { flex-direction: column; } .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
 
-const S = {
-  body: { fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", background: "#f5f5f0", minHeight: "100vh", color: "#1a1a1a" },
-  header: { background: "#fff", borderBottom: "1px solid #e8e8e3", padding: "0 24px", height: 56, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 10 },
-  logo: { display: "flex", alignItems: "center", gap: 10, fontSize: 15, fontWeight: 600 },
-  logoIcon: { width: 28, height: 28, background: "linear-gradient(135deg,#7c3aed,#a855f7)", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontSize: 14 },
-  badge: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#6b7280", background: "#f5f5f0", border: "1px solid #e8e8e3", padding: "4px 10px", borderRadius: 20 },
-  main: { maxWidth: 860, width: "100%", margin: "0 auto", padding: "28px 20px", display: "flex", flexDirection: "column", gap: 14 },
-  card: { background: "#fff", border: "1px solid #e8e8e3", borderRadius: 16, padding: 24 },
-  cardTitle: { fontSize: 12, fontWeight: 600, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: 14 },
-  inputGroup: { display: "flex", flexDirection: "column", gap: 5, flex: 1, minWidth: 160 },
-  label: { fontSize: 12, color: "#6b7280", fontWeight: 500 },
-  input: { background: "#f9f9f7", border: "1px solid #e8e8e3", borderRadius: 10, padding: "10px 13px", fontSize: 14, color: "#1a1a1a", fontFamily: "inherit", outline: "none", width: "100%" },
-  textarea: { background: "#f9f9f7", border: "1px solid #e8e8e3", borderRadius: 10, padding: "10px 13px", fontSize: 14, color: "#1a1a1a", fontFamily: "inherit", outline: "none", width: "100%", minHeight: 90, resize: "vertical", lineHeight: 1.5 },
-  btnPrimary: { display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: "pointer", border: "none", background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", fontFamily: "inherit" },
-  btnGhost: { display: "inline-flex", alignItems: "center", gap: 7, padding: "10px 18px", borderRadius: 10, fontSize: 14, fontWeight: 500, cursor: "pointer", border: "1px solid #e8e8e3", background: "#f5f5f0", color: "#374151", fontFamily: "inherit" },
-  tabs: { display: "flex", gap: 4, background: "#fff", border: "1px solid #e8e8e3", borderRadius: 12, padding: 4 },
-  tabActive: { flex: 1, padding: "9px 16px", borderRadius: 9, border: "none", background: "linear-gradient(135deg,#7c3aed,#a855f7)", color: "#fff", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
-  tabInactive: { flex: 1, padding: "9px 16px", borderRadius: 9, border: "none", background: "transparent", color: "#6b7280", fontSize: 14, fontWeight: 500, cursor: "pointer", fontFamily: "inherit" },
-  statusInfo: { borderRadius: 10, padding: "12px 15px", fontSize: 13, lineHeight: 1.5, background: "#faf5ff", color: "#6d28d9", border: "1px solid #e9d5ff" },
-  statusSuccess: { borderRadius: 10, padding: "12px 15px", fontSize: 13, lineHeight: 1.5, background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" },
-  statusError: { borderRadius: 10, padding: "12px 15px", fontSize: 13, lineHeight: 1.5, background: "#fef2f2", color: "#991b1b", border: "1px solid #fecaca" },
-  statGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(120px,1fr))", gap: 10 },
-  statCard: { background: "#f9f9f7", border: "1px solid #e8e8e3", borderRadius: 10, padding: "12px 14px" },
-  statValue: { fontSize: 22, fontWeight: 700, color: "#7c3aed", lineHeight: 1.2 },
-  statLabel: { fontSize: 11, color: "#9ca3af", marginTop: 3 },
-  listItem: { background: "#f9f9f7", border: "1px solid #e8e8e3", borderRadius: 9, padding: "10px 13px", fontSize: 13, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 7 },
-  sectionHeader: { fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 10, paddingBottom: 8, borderBottom: "1px solid #f0f0eb", display: "flex", alignItems: "center", gap: 7 },
-  aiBox: { background: "linear-gradient(135deg,#faf5ff,#f5f0ff)", border: "1px solid #e9d5ff", borderRadius: 12, padding: "16px 18px", fontSize: 13.5, lineHeight: 1.7, color: "#374151", marginBottom: 20 },
-  tag: (c) => ({ display: "inline-block", padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 500, ...({ purple: { background: "#faf5ff", color: "#7c3aed", border: "1px solid #e9d5ff" }, green: { background: "#f0fdf4", color: "#166534", border: "1px solid #bbf7d0" }, blue: { background: "#eff6ff", color: "#1d4ed8", border: "1px solid #bfdbfe" }, gray: { background: "#f9fafb", color: "#374151", border: "1px solid #e5e7eb" } }[c]) }),
-  emptyState: { textAlign: "center", padding: "48px 24px", color: "#9ca3af" },
-};
+<header>
+  <div class="logo">
+    <div class="logo-icon">M</div>
+    Meshmesh
+  </div>
+  <div class="connection-badge">
+    <div class="dot" id="connDot"></div>
+    <span id="connLabel">Not connected</span>
+  </div>
+</header>
 
-async function ghFetch(repo, token, path, opts = {}) {
-  const res = await fetch(`https://api.github.com${path}`, {
-    ...opts,
-    headers: { Authorization: `Bearer ${token}`, Accept: "application/vnd.github+json", "X-GitHub-Api-Version": "2022-11-28", ...(opts.headers || {}) }
-  });
-  const body = await res.json();
-  if (!res.ok) throw new Error(`GitHub ${res.status}: ${body.message}`);
-  return body;
-}
-
-async function callClaude(system, user) {
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ model: "claude-sonnet-4-20250514", max_tokens: 8000, system, messages: [{ role: "user", content: user }] })
-  });
-  const data = await res.json();
-  return data.content?.[0]?.text || "";
-}
-
-function StatusBox({ msg, type }) {
-  if (!msg) return null;
-  const style = type === "error" ? S.statusError : type === "success" ? S.statusSuccess : S.statusInfo;
-  return <div style={style}>{type === "loading" && <span style={{ marginRight: 6 }}>⟳</span>}{msg}</div>;
-}
-
-function Tag({ color, children }) {
-  return <span style={S.tag(color)}>{children}</span>;
-}
-
-export default function App() {
-  const [token, setToken] = useState("");
-  const [repo, setRepo] = useState("");
-  const [connected, setConnected] = useState(false);
-  const [connName, setConnName] = useState("");
-  const [connStatus, setConnStatus] = useState(null);
-  const [tab, setTab] = useState("updater");
-
-  // Updater
-  const [filePath, setFilePath] = useState("");
-  const [updatePrompt, setUpdatePrompt] = useState("");
-  const [commitMsg, setCommitMsg] = useState("");
-  const [updateStatus, setUpdateStatus] = useState(null);
-  const [updatingLoading, setUpdatingLoading] = useState(false);
-
-  // Report
-  const [reportData, setReportData] = useState(null);
-  const [reportStatus, setReportStatus] = useState(null);
-  const [reportLoading, setReportLoading] = useState(false);
-
-  async function connect() {
-    if (!token || !repo) { setConnStatus({ msg: "Fill in both token and repository.", type: "error" }); return; }
-    setConnStatus({ msg: "Connecting…", type: "loading" });
-    try {
-      const info = await ghFetch(repo, token, `/repos/${repo}`);
-      setConnected(true);
-      setConnName(info.full_name);
-      setConnStatus({ msg: `✓ Connected to ${info.full_name} · ${info.private ? "Private" : "Public"} · ${info.language || "No language"}`, type: "success" });
-    } catch (e) {
-      setConnected(false);
-      setConnStatus({ msg: `✗ ${e.message}`, type: "error" });
-    }
-  }
-
-  async function runUpdate() {
-    if (!connected) { setUpdateStatus({ msg: "Connect a repository first.", type: "error" }); return; }
-    if (!filePath || !updatePrompt) { setUpdateStatus({ msg: "Enter a file path and describe the change.", type: "error" }); return; }
-    setUpdatingLoading(true);
-    setUpdateStatus({ msg: "Fetching file from GitHub…", type: "loading" });
-    try {
-      const fileData = await ghFetch(repo, token, `/repos/${repo}/contents/${filePath}`);
-      const currentContent = atob(fileData.content.replace(/\n/g, ""));
-      setUpdateStatus({ msg: "Sending to Claude…", type: "loading" });
-      const updated = await callClaude(
-        "You are a code editor. Return ONLY the complete updated file content with no explanations, no markdown fences, no commentary.",
-        `File: ${filePath}\n\nCurrent content:\n${currentContent}\n\nChange requested:\n${updatePrompt}`
-      );
-      setUpdateStatus({ msg: "Pushing to GitHub…", type: "loading" });
-      const msg = commitMsg || `chore: update ${filePath} via AI`;
-      await ghFetch(repo, token, `/repos/${repo}/contents/${filePath}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: msg, content: btoa(unescape(encodeURIComponent(updated))), sha: fileData.sha })
-      });
-      setUpdateStatus({ msg: `✓ Done! "${filePath}" updated and pushed. Commit: "${msg}"`, type: "success" });
-    } catch (e) {
-      setUpdateStatus({ msg: `✗ ${e.message}`, type: "error" });
-    }
-    setUpdatingLoading(false);
-  }
-
-  async function generateReport() {
-    if (!connected) { setReportStatus({ msg: "Connect a repository first.", type: "error" }); return; }
-    setReportLoading(true);
-    setReportData(null);
-    setReportStatus({ msg: "Fetching repository data…", type: "loading" });
-    try {
-      const [info, branches, commits, contributors, pulls, releases] = await Promise.all([
-        ghFetch(repo, token, `/repos/${repo}`),
-        ghFetch(repo, token, `/repos/${repo}/branches?per_page=10`).catch(() => []),
-        ghFetch(repo, token, `/repos/${repo}/commits?per_page=8`).catch(() => []),
-        ghFetch(repo, token, `/repos/${repo}/contributors?per_page=8`).catch(() => []),
-        ghFetch(repo, token, `/repos/${repo}/pulls?state=open&per_page=8`).catch(() => []),
-        ghFetch(repo, token, `/repos/${repo}/releases?per_page=5`).catch(() => []),
-      ]);
-      setReportStatus({ msg: "Generating AI summary…", type: "loading" });
-      const summary = await callClaude(
-        "You are a concise technical analyst. Write 2–3 plain-English sentences max.",
-        `Analyze this GitHub repo and give a strategic health summary.\nRepo: ${info.full_name}\nStars: ${info.stargazers_count} | Forks: ${info.forks_count} | Open issues: ${info.open_issues_count}\nLanguage: ${info.language}\nBranches: ${branches.length} | Contributors: ${contributors.length} | Open PRs: ${pulls.length} | Releases: ${releases.length}`
-      );
-      setReportData({ info, branches, commits, contributors, pulls, releases, summary });
-      setReportStatus(null);
-    } catch (e) {
-      setReportStatus({ msg: `✗ ${e.message}`, type: "error" });
-    }
-    setReportLoading(false);
-  }
-
-  const fmt = (d) => d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "—";
-
-  return (
-    <div style={S.body}>
-      {/* Header */}
-      <div style={S.header}>
-        <div style={S.logo}>
-          <div style={S.logoIcon}>G</div>
-          GitHub Manager
-        </div>
-        <div style={S.badge}>
-          <div style={{ width: 7, height: 7, borderRadius: "50%", background: connected ? "#22c55e" : "#d1d5db" }} />
-          {connected ? `Connected · ${connName}` : "Not connected"}
-        </div>
+<main>
+  <div class="setup-card">
+    <div class="card-title">Connect Repository</div>
+    <div class="input-row">
+      <div class="input-group">
+        <label>GitHub Token</label>
+        <input type="password" id="token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" />
       </div>
-
-      <div style={S.main}>
-        {/* Connect */}
-        <div style={S.card}>
-          <div style={S.cardTitle}>Connect Repository</div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 12 }}>
-            <div style={S.inputGroup}>
-              <label style={S.label}>GitHub Token</label>
-              <input style={S.input} type="password" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" value={token} onChange={e => setToken(e.target.value)} />
-            </div>
-            <div style={S.inputGroup}>
-              <label style={S.label}>Repository</label>
-              <input style={S.input} type="text" placeholder="e.g. meshmesh/my-repo" value={repo} onChange={e => setRepo(e.target.value)} />
-            </div>
-            <div style={{ display: "flex", alignItems: "flex-end" }}>
-              <button style={S.btnGhost} onClick={connect}>Connect</button>
-            </div>
-          </div>
-          <StatusBox {...(connStatus || { msg: "", type: "" })} />
-        </div>
-
-        {/* Tabs */}
-        <div style={S.tabs}>
-          <button style={tab === "updater" ? S.tabActive : S.tabInactive} onClick={() => setTab("updater")}>✦ Self-Updater</button>
-          <button style={tab === "report" ? S.tabActive : S.tabInactive} onClick={() => setTab("report")}>📊 Repo Report</button>
-        </div>
-
-        {/* Updater */}
-        {tab === "updater" && (
-          <div style={S.card}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={S.inputGroup}>
-                <label style={S.label}>File to update</label>
-                <input style={S.input} type="text" placeholder="e.g. index.html or src/app.js" value={filePath} onChange={e => setFilePath(e.target.value)} />
-                <span style={{ fontSize: 11, color: "#9ca3af", marginTop: 3 }}>Exact file path inside your repository</span>
-              </div>
-              <div style={S.inputGroup}>
-                <label style={S.label}>What should change?</label>
-                <textarea style={S.textarea} placeholder="Describe the change — e.g. 'Add a dark mode toggle to the header'" value={updatePrompt} onChange={e => setUpdatePrompt(e.target.value)} />
-              </div>
-              <div style={S.inputGroup}>
-                <label style={S.label}>Commit message (optional)</label>
-                <input style={S.input} type="text" placeholder="e.g. feat: add dark mode toggle" value={commitMsg} onChange={e => setCommitMsg(e.target.value)} />
-              </div>
-              <div style={{ display: "flex", gap: 10 }}>
-                <button style={{ ...S.btnPrimary, opacity: updatingLoading ? 0.6 : 1 }} onClick={runUpdate} disabled={updatingLoading}>
-                  {updatingLoading ? "⟳ Working…" : "✦ Generate & Push"}
-                </button>
-                <button style={S.btnGhost} onClick={() => { setFilePath(""); setUpdatePrompt(""); setCommitMsg(""); setUpdateStatus(null); }}>Clear</button>
-              </div>
-              <StatusBox {...(updateStatus || { msg: "", type: "" })} />
-            </div>
-          </div>
-        )}
-
-        {/* Report */}
-        {tab === "report" && (
-          <div style={S.card}>
-            <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-              <button style={{ ...S.btnPrimary, opacity: reportLoading ? 0.6 : 1 }} onClick={generateReport} disabled={reportLoading}>
-                {reportLoading ? "⟳ Loading…" : "📊 Generate Report"}
-              </button>
-              <button style={S.btnGhost} onClick={() => { setReportData(null); setReportStatus(null); }}>Clear</button>
-            </div>
-            <StatusBox {...(reportStatus || { msg: "", type: "" })} />
-
-            {!reportData && !reportStatus && (
-              <div style={S.emptyState}>
-                <div style={{ fontSize: 36, marginBottom: 12 }}>📊</div>
-                <div style={{ fontSize: 15, fontWeight: 600, color: "#374151", marginBottom: 6 }}>No report yet</div>
-                <div style={{ fontSize: 13 }}>Connect your repo and click Generate Report</div>
-              </div>
-            )}
-
-            {reportData && (() => {
-              const { info, branches, commits, contributors, pulls, releases, summary } = reportData;
-              return (
-                <div>
-                  <div style={S.aiBox}>
-                    <div style={{ fontSize: 11, fontWeight: 600, color: "#7c3aed", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>✦ AI Summary</div>
-                    {summary}
-                  </div>
-
-                  {/* Overview */}
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={S.sectionHeader}>📦 Overview</div>
-                    <div style={S.statGrid}>
-                      {[["Stars", info.stargazers_count], ["Forks", info.forks_count], ["Issues", info.open_issues_count], ["Branches", branches.length], ["PRs", pulls.length], ["Releases", releases.length]].map(([l, v]) => (
-                        <div key={l} style={S.statCard}><div style={S.statValue}>{v}</div><div style={S.statLabel}>{l}</div></div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Settings */}
-                  <div style={{ marginBottom: 24 }}>
-                    <div style={S.sectionHeader}>⚙️ Settings</div>
-                    {[
-                      ["Visibility", <Tag color={info.private ? "gray" : "green"}>{info.private ? "Private" : "Public"}</Tag>],
-                      ["Default Branch", <Tag color="purple">{info.default_branch}</Tag>],
-                      ["Language", <Tag color="blue">{info.language || "Not detected"}</Tag>],
-                      ["Wiki", <Tag color={info.has_wiki ? "green" : "gray"}>{info.has_wiki ? "Enabled" : "Disabled"}</Tag>],
-                      ["Issues", <Tag color={info.has_issues ? "green" : "gray"}>{info.has_issues ? "Enabled" : "Disabled"}</Tag>],
-                      ["Created", fmt(info.created_at)],
-                      ["Last Updated", fmt(info.updated_at)],
-                    ].map(([k, v]) => (
-                      <div key={k} style={S.listItem}><span style={{ fontWeight: 500 }}>{k}</span><span style={{ fontSize: 12, color: "#6b7280" }}>{v}</span></div>
-                    ))}
-                  </div>
-
-                  {/* Branches */}
-                  {branches.length > 0 && (
-                    <div style={{ marginBottom: 24 }}>
-                      <div style={S.sectionHeader}>🌿 Branches</div>
-                      {branches.map(b => (
-                        <div key={b.name} style={S.listItem}>
-                          <span style={{ fontWeight: 500 }}>{b.name}</span>
-                          <Tag color={b.protected ? "purple" : "gray"}>{b.protected ? "Protected" : "Unprotected"}</Tag>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Commits */}
-                  {commits.length > 0 && (
-                    <div style={{ marginBottom: 24 }}>
-                      <div style={S.sectionHeader}>🔁 Recent Commits</div>
-                      {commits.map(c => (
-                        <div key={c.sha} style={S.listItem}>
-                          <span style={{ fontWeight: 500, fontSize: 13 }}>{c.commit.message.split("\n")[0].substring(0, 55)}{c.commit.message.length > 55 ? "…" : ""}</span>
-                          <span style={{ fontSize: 11, color: "#9ca3af", textAlign: "right", flexShrink: 0 }}>{c.commit.author?.name}<br />{fmt(c.commit.author?.date)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Contributors */}
-                  {contributors.length > 0 && (
-                    <div style={{ marginBottom: 24 }}>
-                      <div style={S.sectionHeader}>👥 Contributors</div>
-                      {contributors.map(c => (
-                        <div key={c.login} style={S.listItem}>
-                          <span style={{ fontWeight: 500 }}>{c.login}</span>
-                          <span style={{ fontSize: 12, color: "#6b7280" }}>{c.contributions} commits</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Pull Requests */}
-                  {pulls.length > 0 && (
-                    <div style={{ marginBottom: 24 }}>
-                      <div style={S.sectionHeader}>🔀 Open Pull Requests</div>
-                      {pulls.map(p => (
-                        <div key={p.id} style={S.listItem}>
-                          <span style={{ fontWeight: 500 }}>{p.title.substring(0, 55)}{p.title.length > 55 ? "…" : ""}</span>
-                          <span style={{ fontSize: 11, color: "#9ca3af", textAlign: "right", flexShrink: 0 }}>#{p.number}<br />{p.user?.login}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Releases */}
-                  {releases.length > 0 && (
-                    <div>
-                      <div style={S.sectionHeader}>🏷️ Releases</div>
-                      {releases.map(r => (
-                        <div key={r.id} style={S.listItem}>
-                          <span style={{ fontWeight: 500 }}>{r.name || r.tag_name}</span>
-                          <span style={{ fontSize: 11, color: "#9ca3af", textAlign: "right", flexShrink: 0 }}>
-                            {r.prerelease ? "⚠ Pre-release" : "✓ Stable"}<br />{fmt(r.published_at)}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
-          </div>
-        )}
+      <div class="input-group">
+        <label>Repository (owner/repo)</label>
+        <input type="text" id="repo" placeholder="e.g. madnessgate44-debug/Meshmesh" />
+      </div>
+      <div style="display:flex;align-items:flex-end;">
+        <button class="btn btn-ghost" onclick="connect()">Connect</button>
       </div>
     </div>
-  );
+    <div style="margin-top:12px;"><div class="status-box" id="connectDebug"></div></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('updater', this)">✦ Self-Updater</button>
+    <button class="tab" onclick="switchTab('report', this)">📊 Repo Report</button>
+  </div>
+
+  <div class="panel active" id="panel-updater">
+    <div class="updater-form">
+      <div class="input-group">
+        <label>File to update</label>
+        <input type="text" id="filePath" placeholder="e.g. meshmesh.html" />
+        <div class="file-hint">Exact file path inside your repository</div>
+      </div>
+      <div class="input-group">
+        <label>What should change?</label>
+        <textarea id="updatePrompt" placeholder="Describe the change — e.g. 'Change the header color to blue'"></textarea>
+      </div>
+      <div class="input-group">
+        <label>Commit message (optional)</label>
+        <input type="text" id="commitMsg" placeholder="e.g. feat: update header color" />
+      </div>
+      <div class="action-row">
+        <button class="btn btn-primary" onclick="runUpdate()" id="updateBtn">✦ Generate & Push</button>
+        <button class="btn btn-ghost" onclick="clearUpdater()">Clear</button>
+      </div>
+      <div class="status-box" id="updateStatus"></div>
+      <div class="diff-box" id="diffBox"></div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-report">
+    <div class="report-controls">
+      <button class="btn btn-primary" onclick="generateReport()" id="reportBtn">📊 Generate Report</button>
+      <button class="btn btn-ghost" onclick="clearReport()">Clear</button>
+    </div>
+    <div class="status-box" id="reportStatus"></div>
+    <div id="reportContent">
+      <div class="empty-state">
+        <div class="empty-icon">📊</div>
+        <div class="empty-title">No report yet</div>
+        <div class="empty-desc">Connect your repo and click Generate Report</div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+let ghToken = '', ghRepo = '', repoData = {};
+
+async function connect() {
+  ghToken = document.getElementById('token').value.trim();
+  ghRepo = document.getElementById('repo').value.trim();
+  const d = document.getElementById('connectDebug');
+  if (!ghToken || !ghRepo) { d.className='status-box show error'; d.textContent='✗ Fill in both fields.'; return; }
+  d.className='status-box show loading'; d.innerHTML='<span class="spinner"></span>Connecting…';
+  try {
+    const r = await fetch(`https://api.github.com/repos/${ghRepo}`, { headers: { Authorization:`Bearer ${ghToken}`, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28' }});
+    const b = await r.json();
+    if (!r.ok) { d.className='status-box show error'; d.textContent=`✗ GitHub ${r.status}: ${b.message}`; setConn(false); return; }
+    repoData.info = b; setConn(true, b.full_name);
+    d.className='status-box show success'; d.textContent=`✓ Connected to ${b.full_name} · ${b.private?'Private':'Public'} · ${b.language||'No language'}`;
+  } catch(e) { d.className='status-box show error'; d.textContent=`✗ ${e.message}`; setConn(false); }
 }
+
+function setConn(ok, name='') {
+  document.getElementById('connDot').className = ok?'dot connected':'dot';
+  document.getElementById('connLabel').textContent = ok?`Connected · ${name}`:'Not connected';
+}
+
+async function ghFetch(path, opts={}) {
+  const r = await fetch(`https://api.github.com${path}`, { ...opts, headers:{ Authorization:`Bearer ${ghToken}`, Accept:'application/vnd.github+json', 'X-GitHub-Api-Version':'2022-11-28', ...(opts.headers||{}) }});
+  const b = await r.json(); if (!r.ok) throw new Error(`GitHub ${r.status}: ${b.message}`); return b;
+}
+
+async function callClaude(sys, user) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:8000, system:sys, messages:[{role:'user',content:user}] })});
+  const d = await r.json(); return d.content?.[0]?.text||'';
+}
+
+async function runUpdate() {
+  if (!ghToken||!ghRepo) { alert('Connect first.'); return; }
+  const fp=document.getElementById('filePath').value.trim(), pr=document.getElementById('updatePrompt').value.trim(), cm=document.getElementById('commitMsg').value.trim()||`chore: update ${fp} via AI`;
+  if (!fp||!pr) { alert('Enter file path and describe the change.'); return; }
+  const btn=document.getElementById('updateBtn'); btn.disabled=true;
+  setStatus('updateStatus','loading','⟳ Fetching file…');
+  try {
+    const fd = await ghFetch(`/repos/${ghRepo}/contents/${fp}`);
+    const cur = atob(fd.content.replace(/\n/g,''));
+    setStatus('updateStatus','loading','⟳ Sending to Claude…');
+    const upd = await callClaude('You are a code editor. Return ONLY the complete updated file. No explanations, no markdown fences.',`File: ${fp}\n\nCurrent:\n${cur}\n\nChange:\n${pr}`);
+    showDiff(cur,upd);
+    setStatus('updateStatus','loading','⟳ Pushing to GitHub…');
+    await ghFetch(`/repos/${ghRepo}/contents/${fp}`,{ method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ message:cm, content:btoa(unescape(encodeURIComponent(upd))), sha:fd.sha })});
+    setStatus('updateStatus','success',`✓ Done! "${fp}" updated and pushed.`);
+  } catch(e) { setStatus('updateStatus','error',`✗ ${e.message}`); }
+  btn.disabled=false;
+}
+
+function showDiff(b,a) {
+  const box=document.getElementById('diffBox'), bl=b.split('\n'), al=a.split('\n');
+  let html='<div class="diff-meta">--- before  +++ after</div>';
+  for(let i=0;i<Math.min(Math.max(bl.length,al.length),60);i++) {
+    const bv=bl[i]??'', av=al[i]??'';
+    if(bv!==av){ if(bv) html+=`<div class="diff-remove">- ${esc(bv)}</div>`; if(av) html+=`<div class="diff-add">+ ${esc(av)}</div>`; }
+  }
+  box.innerHTML=html; box.classList.add('show');
+}
+
+function clearUpdater() { ['filePath','updatePrompt','commitMsg'].forEach(id=>document.getElementById(id).value=''); document.getElementById('diffBox').classList.remove('show'); hide('updateStatus'); }
+
+async function generateReport() {
+  if (!ghToken||!ghRepo) { alert('Connect first.'); return; }
+  const btn=document.getElementById('reportBtn'); btn.disabled=true;
+  setStatus('reportStatus','loading','⟳ Fetching data…'); document.getElementById('reportContent').innerHTML='';
+  try {
+    const [info,branches,commits,contributors,pulls,releases] = await Promise.all([
+      ghFetch(`/repos/${ghRepo}`), ghFetch(`/repos/${ghRepo}/branches?per_page=10`).catch(()=>[]),
+      ghFetch(`/repos/${ghRepo}/commits?per_page=8`).catch(()=>[]), ghFetch(`/repos/${ghRepo}/contributors?per_page=8`).catch(()=>[]),
+      ghFetch(`/repos/${ghRepo}/pulls?state=open&per_page=8`).catch(()=>[]), ghFetch(`/repos/${ghRepo}/releases?per_page=5`).catch(()=>[])
+    ]);
+    setStatus('reportStatus','loading','⟳ Generating AI summary…');
+    const summary = await callClaude('Concise technical analyst. 2-3 plain sentences max.',`Repo: ${info.full_name}\nStars:${info.stargazers_count} Forks:${info.forks_count} Issues:${info.open_issues_count}\nLanguage:${info.language} Branches:${branches.length} Contributors:${contributors.length} PRs:${pulls.length} Releases:${releases.length}`);
+    hide('reportStatus');
+    renderReport({info,branches,commits,contributors,pulls,releases},summary);
+  } catch(e) { setStatus('reportStatus','error',`✗ ${e.message}`); }
+  btn.disabled=false;
+}
+
+function renderReport(r,summary) {
+  const i=r.info, fmt=d=>d?new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';
+  let html=`<div class="ai-summary"><div class="ai-summary-label">✦ AI Summary</div>${esc(summary)}</div>
+  <div class="report-section"><div class="section-header">📦 Overview</div><div class="stat-grid">
+    ${[['Stars',i.stargazers_count],['Forks',i.forks_count],['Issues',i.open_issues_count],['Branches',r.branches.length],['PRs',r.pulls.length],['Releases',r.releases.length]].map(([l,v])=>`<div class="stat-card"><div class="stat-value">${v}</div><div class="stat-label">${l}</div></div>`).join('')}
+  </div></div>
+  <div class="report-section"><div class="section-header">⚙️ Settings</div><div class="list-items">
+    ${[['Visibility',`<span class="tag ${i.private?'tag-gray':'tag-green'}">${i.private?'Private':'Public'}</span>`],['Default Branch',`<span class="tag tag-purple">${i.default_branch}</span>`],['Language',`<span class="tag tag-blue">${i.language||'None'}</span>`],['Created',fmt(i.created_at)],['Updated',fmt(i.updated_at)]].map(([k,v])=>`<div class="list-item"><span class="list-item-name">${k}</span><span>${v}</span></div>`).join('')}
+  </div></div>`;
+  if(r.branches.length) html+=`<div class="report-section"><div class="section-header">🌿 Branches</div><div class="list-items">${r.branches.map(b=>`<div class="list-item"><span class="list-item-name">${esc(b.name)}</span><span class="tag ${b.protected?'tag-purple':'tag-gray'}">${b.protected?'Protected':'Unprotected'}</span></div>`).join('')}</div></div>`;
+  if(r.commits.length) html+=`<div class="report-section"><div class="section-header">🔁 Recent Commits</div><div class="list-items">${r.commits.map(c=>`<div class="list-item"><span class="list-item-name">${esc(c.commit.message.split('\n')[0].substring(0,55))}</span><span class="list-item-meta">${c.commit.author?.name}<br>${fmt(c.commit.author?.date)}</span></div>`).join('')}</div></div>`;
+  if(r.contributors.length) html+=`<div class="report-section"><div class="section-header">👥 Contributors</div><div class="list-items">${r.contributors.map(c=>`<div class="list-item"><span class="list-item-name">${esc(c.login)}</span><span class="list-item-meta">${c.contributions} commits</span></div>`).join('')}</div></div>`;
+  if(r.pulls.length) html+=`<div class="report-section"><div class="section-header">🔀 Open PRs</div><div class="list-items">${r.pulls.map(p=>`<div class="list-item"><span class="list-item-name">${esc(p.title.substring(0,55))}</span><span class="list-item-meta">#${p.number}</span></div>`).join('')}</div></div>`;
+  document.getElementById('reportContent').innerHTML=html;
+}
+
+function clearReport() { hide('reportStatus'); document.getElementById('reportContent').innerHTML='<div class="empty-state"><div class="empty-icon">📊</div><div class="empty-title">No report yet</div></div>'; }
+function switchTab(n,el) { document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active')); document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); el.classList.add('active'); document.getElementById(`panel-${n}`).classList.add('active'); }
+function setStatus(id,type,msg) { const el=document.getElementById(id); el.className=`status-box show ${type}`; el.innerHTML=type==='loading'?`<span class="spinner"></span>${msg}`:msg; }
+function hide(id) { document.getElementById(id).className='status-box'; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+</script>
+</body>
+</html>
