@@ -17,30 +17,29 @@ main{flex:1;width:100%;max-width:480px;margin:0 auto;padding:20px 16px;display:f
 .card{background:#fff;border:1px solid #e8e8e3;border-radius:16px;padding:20px}
 .card-title{font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:0.07em;margin-bottom:14px}
 .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;width:100%}
-.field:last-of-type{margin-bottom:0}
 label{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:0.05em}
 input{background:#f9f9f7;border:1px solid #e8e8e3;border-radius:10px;padding:12px 14px;font-size:14px;color:#1a1a1a;font-family:inherit;outline:none;width:100%}
 input:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
-textarea{background:#f9f9f7;border:1px solid #e8e8e3;border-radius:10px;padding:12px 14px;font-size:14px;color:#1a1a1a;font-family:inherit;outline:none;width:100%;min-height:90px;resize:vertical;line-height:1.5}
+textarea{background:#f9f9f7;border:1px solid #e8e8e3;border-radius:10px;padding:12px 14px;font-size:13px;color:#1a1a1a;font-family:monospace;outline:none;width:100%;min-height:200px;resize:vertical;line-height:1.5}
 textarea:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
 .hint{font-size:11px;color:#9ca3af;margin-top:3px}
-.btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;margin-top:4px}
+.btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
 .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
 .btn-ghost{padding:10px 18px;background:#f5f5f0;color:#374151;border:1px solid #e8e8e3;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.tabs{display:flex;gap:4px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:4px}
-.tab{flex:1;padding:9px 16px;border-radius:9px;border:none;background:transparent;font-size:14px;font-weight:500;color:#6b7280;cursor:pointer;font-family:inherit}
-.tab.active{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
-.panel{display:none}
-.panel.active{display:flex;flex-direction:column;gap:14px}
-.st{border-radius:10px;padding:11px 14px;font-size:13px;display:none;line-height:1.5}
+.row{display:flex;gap:10px;align-items:center;margin-top:8px}
+.st{border-radius:10px;padding:11px 14px;font-size:13px;display:none;line-height:1.5;margin-top:12px}
 .st.show{display:block}
 .st.success{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
 .st.error{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
 .st.loading{background:#faf5ff;color:#6d28d9;border:1px solid #e9d5ff}
 .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(109,40,217,0.3);border-top-color:#7c3aed;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.tabs{display:flex;gap:4px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:4px}
+.tab{flex:1;padding:9px 16px;border-radius:9px;border:none;background:transparent;font-size:14px;font-weight:500;color:#6b7280;cursor:pointer;font-family:inherit}
+.tab.active{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
+.panel{display:none;flex-direction:column;gap:14px}
+.panel.active{display:flex}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .stat-card{background:#f9f9f7;border:1px solid #e8e8e3;border-radius:10px;padding:12px 10px;text-align:center}
 .stat-value{font-size:20px;font-weight:700;color:#7c3aed}
 .stat-label{font-size:11px;color:#9ca3af;margin-top:3px}
@@ -51,15 +50,8 @@ textarea:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
 .tag-purple{background:#faf5ff;color:#7c3aed;border:1px solid #e9d5ff}
 .tag-green{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
 .tag-gray{background:#f9fafb;color:#374151;border:1px solid #e5e7eb}
-.ai-box{background:linear-gradient(135deg,#faf5ff,#f5f0ff);border:1px solid #e9d5ff;border-radius:12px;padding:16px;font-size:13px;line-height:1.7;color:#374151}
-.ai-label{font-size:11px;font-weight:600;color:#7c3aed;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px}
 .section-title{font-size:12px;font-weight:600;color:#374151;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #f0f0eb}
 .empty{text-align:center;padding:40px 20px;color:#9ca3af;font-size:13px}
-.diff-box{background:#1a1a2e;border-radius:10px;padding:14px;font-family:monospace;font-size:12px;line-height:1.6;color:#e2e8f0;max-height:220px;overflow-y:auto;display:none}
-.diff-box.show{display:block}
-.diff-add{color:#4ade80}
-.diff-remove{color:#f87171}
-.diff-meta{color:#94a3b8}
 footer{text-align:center;padding:16px}
 .reset-link{font-size:12px;color:#d1d5db;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit}
 </style>
@@ -81,7 +73,7 @@ footer{text-align:center;padding:16px}
 
   <!-- Setup Card -->
   <div class="card" id="setupCard">
-    <div class="card-title">Setup</div>
+    <div class="card-title">Connect to GitHub</div>
     <div class="field">
       <label>GitHub Token</label>
       <input type="password" id="ghToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
@@ -89,56 +81,53 @@ footer{text-align:center;padding:16px}
     <div class="field">
       <label>Repository</label>
       <input type="text" id="ghRepo" placeholder="madnessgate44-debug/Meshmesh">
-    </div>
-    <div class="field">
-      <label>Anthropic API Key</label>
-      <input type="password" id="aiKey" placeholder="sk-ant-xxxxxxxxxxxxxxxxxxxx">
-      <div class="hint">Saved locally. Never sent anywhere except Anthropic.</div>
+      <div class="hint">Saved permanently. Never shown again.</div>
     </div>
     <button class="btn-primary" onclick="saveSetup()" id="setupBtn">Save & Connect</button>
     <div class="st" id="setupSt"></div>
   </div>
 
-  <!-- Tabs -->
+  <!-- Tabs — hidden until connected -->
   <div class="tabs" id="tabBar" style="display:none">
-    <button class="tab active" onclick="switchTab('updater',this)">✦ Updater</button>
+    <button class="tab active" onclick="switchTab('pusher',this)">⬆ Push</button>
     <button class="tab" onclick="switchTab('report',this)">📊 Report</button>
   </div>
 
-  <!-- Updater Panel -->
-  <div class="panel active" id="panel-updater">
+  <!-- Push Panel -->
+  <div class="panel active" id="panel-pusher">
     <div class="card">
+      <div class="card-title">Push File to GitHub</div>
       <div class="field">
-        <label>File to update</label>
+        <label>File Path</label>
         <input type="text" id="filePath" placeholder="e.g. app.html">
-        <div class="hint">Exact file path in your repo</div>
+        <div class="hint">Exact path inside your repo</div>
       </div>
       <div class="field">
-        <label>What should change?</label>
-        <textarea id="updatePrompt" placeholder="Describe the change in plain language…"></textarea>
+        <label>New File Content</label>
+        <textarea id="fileContent" placeholder="Paste the full file content here — Claude will provide this in our conversation…"></textarea>
+        <div class="hint">Paste the complete code from Claude here</div>
       </div>
       <div class="field">
-        <label>Commit message (optional)</label>
-        <input type="text" id="commitMsg" placeholder="e.g. feat: add dark mode">
+        <label>Commit Message (optional)</label>
+        <input type="text" id="commitMsg" placeholder="e.g. feat: add repo report">
       </div>
-      <div class="row" style="margin-top:8px">
-        <button class="btn-primary" style="flex:1" onclick="runUpdate()" id="updateBtn">✦ Generate & Push</button>
-        <button class="btn-ghost" onclick="clearUpdater()">Clear</button>
+      <div class="row">
+        <button class="btn-primary" style="flex:1" onclick="pushFile()" id="pushBtn">⬆ Push to GitHub</button>
+        <button class="btn-ghost" onclick="clearPush()">Clear</button>
       </div>
-      <div class="st" id="updateSt" style="margin-top:12px"></div>
-      <div class="diff-box" id="diffBox" style="margin-top:12px"></div>
+      <div class="st" id="pushSt"></div>
     </div>
   </div>
 
   <!-- Report Panel -->
   <div class="panel" id="panel-report">
     <div class="card">
-      <div class="row">
+      <div class="row" style="margin-top:0">
         <button class="btn-primary" style="flex:1" onclick="generateReport()" id="reportBtn">📊 Generate Report</button>
         <button class="btn-ghost" onclick="clearReport()">Clear</button>
       </div>
-      <div class="st" id="reportSt" style="margin-top:12px"></div>
-      <div id="reportContent" style="margin-top:4px">
+      <div class="st" id="reportSt"></div>
+      <div id="reportContent" style="margin-top:12px">
         <div class="empty">Connect and click Generate Report</div>
       </div>
     </div>
@@ -147,235 +136,171 @@ footer{text-align:center;padding:16px}
 </main>
 
 <footer>
-  <button class="reset-link" onclick="resetAll()">Reset Everything</button>
+  <button class="reset-link" onclick="resetAll()">Reset Connection</button>
 </footer>
 
 <script>
-// ── Load saved credentials ──
 var GH_TOKEN = localStorage.getItem('mm_ghtoken') || '';
 var GH_REPO  = localStorage.getItem('mm_ghrepo')  || '';
-var AI_KEY   = localStorage.getItem('mm_aikey')   || '';
 
 window.onload = function() {
-  if (GH_TOKEN && GH_REPO && AI_KEY) {
-    autoConnect();
-  } else {
-    // Pre-fill what we have
+  if (GH_TOKEN && GH_REPO) { autoConnect(); }
+  else {
     if (GH_TOKEN) document.getElementById('ghToken').value = GH_TOKEN;
     if (GH_REPO)  document.getElementById('ghRepo').value  = GH_REPO;
-    if (AI_KEY)   document.getElementById('aiKey').value   = AI_KEY;
   }
 };
 
-// ── Setup ──
 async function saveSetup() {
   var t = document.getElementById('ghToken').value.trim();
   var r = document.getElementById('ghRepo').value.trim();
-  var a = document.getElementById('aiKey').value.trim();
-  if (!t || !r || !a) { setSt('setupSt', 'error', 'Fill in all three fields.'); return; }
+  if (!t || !r) { setSt('setupSt','error','Fill in both fields.'); return; }
   var btn = document.getElementById('setupBtn');
   btn.disabled = true;
-  setSt('setupSt', 'loading', 'Connecting…');
+  setSt('setupSt','loading','Connecting…');
   try {
-    var res = await fetch('https://api.github.com/repos/' + r, {
-      headers: { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+    var res = await fetch('https://api.github.com/repos/'+r, {
+      headers:{Authorization:'Bearer '+t,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
     });
     var data = await res.json();
-    if (!res.ok) { setSt('setupSt', 'error', 'GitHub error: ' + data.message); btn.disabled = false; return; }
+    if (!res.ok) { setSt('setupSt','error','GitHub error: '+data.message); btn.disabled=false; return; }
     localStorage.setItem('mm_ghtoken', t);
     localStorage.setItem('mm_ghrepo',  r);
-    localStorage.setItem('mm_aikey',   a);
-    GH_TOKEN = t; GH_REPO = r; AI_KEY = a;
+    GH_TOKEN=t; GH_REPO=r;
     showConnected(data.full_name);
-  } catch(e) {
-    setSt('setupSt', 'error', 'Failed: ' + e.message);
-    btn.disabled = false;
-  }
+  } catch(e) { setSt('setupSt','error','Failed: '+e.message); btn.disabled=false; }
 }
 
 async function autoConnect() {
   try {
-    var res = await fetch('https://api.github.com/repos/' + GH_REPO, {
-      headers: { Authorization: 'Bearer ' + GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
+    var res = await fetch('https://api.github.com/repos/'+GH_REPO, {
+      headers:{Authorization:'Bearer '+GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
     });
     var data = await res.json();
     if (res.ok) { showConnected(data.full_name); }
-    else { document.getElementById('setupCard').style.display = 'block'; }
-  } catch(e) {
-    document.getElementById('setupCard').style.display = 'block';
-  }
+    else { document.getElementById('setupCard').style.display='block'; }
+  } catch(e) { document.getElementById('setupCard').style.display='block'; }
 }
 
 function showConnected(name) {
-  document.getElementById('connDot').className = 'dot on';
-  document.getElementById('connLabel').textContent = name;
-  document.getElementById('setupCard').style.display = 'none';
-  document.getElementById('tabBar').style.display = 'flex';
-  document.getElementById('panel-updater').classList.add('active');
+  document.getElementById('connDot').className='dot on';
+  document.getElementById('connLabel').textContent=name;
+  document.getElementById('setupCard').style.display='none';
+  document.getElementById('tabBar').style.display='flex';
 }
 
-// ── GitHub helpers ──
 async function ghFetch(path, opts) {
-  opts = opts || {};
-  var res = await fetch('https://api.github.com' + path, Object.assign({}, opts, {
-    headers: Object.assign({ Authorization: 'Bearer ' + GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }, opts.headers || {})
+  opts = opts||{};
+  var res = await fetch('https://api.github.com'+path, Object.assign({},opts,{
+    headers:Object.assign({Authorization:'Bearer '+GH_TOKEN,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},opts.headers||{})
   }));
   var body = await res.json();
-  if (!res.ok) throw new Error('GitHub ' + res.status + ': ' + body.message);
+  if (!res.ok) throw new Error('GitHub '+res.status+': '+body.message);
   return body;
 }
 
-// ── Claude API ──
-async function callClaude(system, user) {
-  var res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': AI_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 8000, system: system, messages: [{ role: 'user', content: user }] })
-  });
-  var data = await res.json();
-  if (!res.ok) throw new Error('Claude error: ' + (data.error && data.error.message));
-  return data.content && data.content[0] && data.content[0].text || '';
-}
-
-// ── Updater ──
-async function runUpdate() {
+async function pushFile() {
   var fp = document.getElementById('filePath').value.trim();
-  var pr = document.getElementById('updatePrompt').value.trim();
-  var cm = document.getElementById('commitMsg').value.trim() || ('chore: update ' + fp + ' via Meshmesh');
-  if (!fp || !pr) { setSt('updateSt', 'error', 'Enter a file path and describe the change.'); return; }
-  var btn = document.getElementById('updateBtn');
-  btn.disabled = true;
-  document.getElementById('diffBox').classList.remove('show');
-  setSt('updateSt', 'loading', 'Fetching file from GitHub…');
+  var content = document.getElementById('fileContent').value;
+  var cm = document.getElementById('commitMsg').value.trim() || ('update '+fp+' via Meshmesh');
+  if (!fp || !content) { setSt('pushSt','error','Enter a file path and paste the content.'); return; }
+  var btn = document.getElementById('pushBtn');
+  btn.disabled=true;
+  setSt('pushSt','loading','Reading current file from GitHub…');
   try {
-    var fd = await ghFetch('/repos/' + GH_REPO + '/contents/' + fp);
-    var current = atob(fd.content.replace(/\n/g, ''));
-    setSt('updateSt', 'loading', 'Sending to Claude…');
-    var updated = await callClaude(
-      'You are a code editor. Return ONLY the complete updated file content. No explanations, no markdown fences, no commentary whatsoever.',
-      'File: ' + fp + '\n\nCurrent content:\n' + current + '\n\nChange requested:\n' + pr
-    );
-    showDiff(current, updated);
-    setSt('updateSt', 'loading', 'Pushing to GitHub…');
-    await ghFetch('/repos/' + GH_REPO + '/contents/' + fp, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: cm, content: btoa(unescape(encodeURIComponent(updated))), sha: fd.sha })
+    var sha = null;
+    try {
+      var existing = await ghFetch('/repos/'+GH_REPO+'/contents/'+fp);
+      sha = existing.sha;
+    } catch(e) { /* new file — no sha needed */ }
+    setSt('pushSt','loading','Pushing to GitHub…');
+    var body = {message:cm, content:btoa(unescape(encodeURIComponent(content)))};
+    if (sha) body.sha = sha;
+    await ghFetch('/repos/'+GH_REPO+'/contents/'+fp,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body)
     });
-    setSt('updateSt', 'success', '✓ Done! "' + fp + '" updated and pushed. Commit: "' + cm + '"');
-  } catch(e) {
-    setSt('updateSt', 'error', '✗ ' + e.message);
-  }
-  btn.disabled = false;
+    setSt('pushSt','success','✓ Done! "'+fp+'" pushed successfully. Commit: "'+cm+'"');
+    document.getElementById('fileContent').value='';
+  } catch(e) { setSt('pushSt','error','✗ '+e.message); }
+  btn.disabled=false;
 }
 
-function showDiff(b, a) {
-  var box = document.getElementById('diffBox');
-  var bl = b.split('\n'), al = a.split('\n');
-  var html = '<div class="diff-meta">--- before &nbsp; +++ after</div>';
-  var max = Math.min(Math.max(bl.length, al.length), 60);
-  for (var i = 0; i < max; i++) {
-    var bv = bl[i] !== undefined ? bl[i] : '';
-    var av = al[i] !== undefined ? al[i] : '';
-    if (bv !== av) {
-      if (bv) html += '<div class="diff-remove">- ' + esc(bv) + '</div>';
-      if (av) html += '<div class="diff-add">+ ' + esc(av) + '</div>';
-    }
-  }
-  box.innerHTML = html;
-  box.classList.add('show');
+function clearPush() {
+  document.getElementById('filePath').value='';
+  document.getElementById('fileContent').value='';
+  document.getElementById('commitMsg').value='';
+  hide('pushSt');
 }
 
-function clearUpdater() {
-  document.getElementById('filePath').value = '';
-  document.getElementById('updatePrompt').value = '';
-  document.getElementById('commitMsg').value = '';
-  document.getElementById('diffBox').classList.remove('show');
-  hide('updateSt');
-}
-
-// ── Report ──
 async function generateReport() {
-  var btn = document.getElementById('reportBtn');
-  btn.disabled = true;
-  document.getElementById('reportContent').innerHTML = '';
-  setSt('reportSt', 'loading', 'Fetching repository data…');
+  var btn=document.getElementById('reportBtn');
+  btn.disabled=true;
+  document.getElementById('reportContent').innerHTML='';
+  setSt('reportSt','loading','Fetching repository data…');
   try {
     var results = await Promise.all([
-      ghFetch('/repos/' + GH_REPO),
-      ghFetch('/repos/' + GH_REPO + '/branches?per_page=10').catch(function(){return[];}),
-      ghFetch('/repos/' + GH_REPO + '/commits?per_page=8').catch(function(){return[];}),
-      ghFetch('/repos/' + GH_REPO + '/contributors?per_page=8').catch(function(){return[];}),
-      ghFetch('/repos/' + GH_REPO + '/pulls?state=open&per_page=8').catch(function(){return[];}),
-      ghFetch('/repos/' + GH_REPO + '/releases?per_page=5').catch(function(){return[];})
+      ghFetch('/repos/'+GH_REPO),
+      ghFetch('/repos/'+GH_REPO+'/branches?per_page=10').catch(function(){return[];}),
+      ghFetch('/repos/'+GH_REPO+'/commits?per_page=8').catch(function(){return[];}),
+      ghFetch('/repos/'+GH_REPO+'/contributors?per_page=8').catch(function(){return[];}),
+      ghFetch('/repos/'+GH_REPO+'/pulls?state=open&per_page=8').catch(function(){return[];}),
+      ghFetch('/repos/'+GH_REPO+'/releases?per_page=5').catch(function(){return[];})
     ]);
-    var info=results[0], branches=results[1], commits=results[2], contributors=results[3], pulls=results[4], releases=results[5];
-    setSt('reportSt', 'loading', 'Generating AI summary…');
-    var summary = await callClaude(
-      'You are a concise technical analyst. Write 2-3 plain English sentences max.',
-      'Analyze this GitHub repo and give a strategic health summary.\nRepo: ' + info.full_name + '\nStars: ' + info.stargazers_count + ' | Forks: ' + info.forks_count + ' | Issues: ' + info.open_issues_count + '\nLanguage: ' + info.language + '\nBranches: ' + branches.length + ' | Contributors: ' + contributors.length + ' | Open PRs: ' + pulls.length + ' | Releases: ' + releases.length
-    );
     hide('reportSt');
-    renderReport(info, branches, commits, contributors, pulls, releases, summary);
-  } catch(e) {
-    setSt('reportSt', 'error', '✗ ' + e.message);
-  }
-  btn.disabled = false;
+    renderReport(results[0],results[1],results[2],results[3],results[4],results[5]);
+  } catch(e) { setSt('reportSt','error','✗ '+e.message); }
+  btn.disabled=false;
 }
 
-function renderReport(info, branches, commits, contributors, pulls, releases, summary) {
-  var fmt = function(d){ return d ? new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'; };
-  var html = '';
-  html += '<div class="ai-box" style="margin-bottom:16px"><div class="ai-label">✦ AI Summary</div>' + esc(summary) + '</div>';
-  html += '<div class="section-title">📦 Overview</div>';
-  html += '<div class="stat-grid" style="margin-bottom:16px">';
-  var stats = [['Stars',info.stargazers_count],['Forks',info.forks_count],['Issues',info.open_issues_count],['Branches',branches.length],['PRs',pulls.length],['Releases',releases.length]];
-  for (var i=0;i<stats.length;i++) html += '<div class="stat-card"><div class="stat-value">'+stats[i][1]+'</div><div class="stat-label">'+stats[i][0]+'</div></div>';
-  html += '</div>';
-  html += '<div class="section-title">⚙️ Settings</div>';
-  var settings = [['Visibility', info.private?'<span class="tag tag-gray">Private</span>':'<span class="tag tag-green">Public</span>'],['Default Branch','<span class="tag tag-purple">'+info.default_branch+'</span>'],['Language','<span class="tag tag-purple">'+(info.language||'None')+'</span>'],['Created',fmt(info.created_at)],['Updated',fmt(info.updated_at)]];
-  for (var j=0;j<settings.length;j++) html += '<div class="list-item"><span class="item-name">'+settings[j][0]+'</span><span>'+settings[j][1]+'</span></div>';
-  if (branches.length) {
-    html += '<div class="section-title" style="margin-top:16px">🌿 Branches</div>';
-    for (var k=0;k<branches.length;k++) html += '<div class="list-item"><span class="item-name">'+esc(branches[k].name)+'</span><span class="tag '+(branches[k].protected?'tag-purple':'tag-gray')+'">'+(branches[k].protected?'Protected':'Unprotected')+'</span></div>';
+function renderReport(info,branches,commits,contributors,pulls,releases) {
+  var fmt=function(d){return d?new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';};
+  var html='';
+  html+='<div class="section-title">📦 Overview</div>';
+  html+='<div class="stat-grid">';
+  var stats=[['Stars',info.stargazers_count],['Forks',info.forks_count],['Issues',info.open_issues_count],['Branches',branches.length],['PRs',pulls.length],['Releases',releases.length]];
+  for(var i=0;i<stats.length;i++) html+='<div class="stat-card"><div class="stat-value">'+stats[i][1]+'</div><div class="stat-label">'+stats[i][0]+'</div></div>';
+  html+='</div>';
+  html+='<div class="section-title">⚙️ Settings</div>';
+  var settings=[['Visibility',info.private?'<span class="tag tag-gray">Private</span>':'<span class="tag tag-green">Public</span>'],['Default Branch','<span class="tag tag-purple">'+info.default_branch+'</span>'],['Language','<span class="tag tag-purple">'+(info.language||'None')+'</span>'],['Created',fmt(info.created_at)],['Updated',fmt(info.updated_at)]];
+  for(var j=0;j<settings.length;j++) html+='<div class="list-item"><span class="item-name">'+settings[j][0]+'</span><span>'+settings[j][1]+'</span></div>';
+  if(branches.length){
+    html+='<div class="section-title" style="margin-top:16px">🌿 Branches</div>';
+    for(var k=0;k<branches.length;k++) html+='<div class="list-item"><span class="item-name">'+esc(branches[k].name)+'</span><span class="tag '+(branches[k].protected?'tag-purple':'tag-gray')+'">'+(branches[k].protected?'Protected':'Unprotected')+'</span></div>';
   }
-  if (commits.length) {
-    html += '<div class="section-title" style="margin-top:16px">🔁 Recent Commits</div>';
-    for (var l=0;l<commits.length;l++) html += '<div class="list-item"><span class="item-name">'+esc(commits[l].commit.message.split('\n')[0].substring(0,50))+'</span><span class="item-meta">'+(commits[l].commit.author&&commits[l].commit.author.name||'—')+'<br>'+fmt(commits[l].commit.author&&commits[l].commit.author.date)+'</span></div>';
+  if(commits.length){
+    html+='<div class="section-title" style="margin-top:16px">🔁 Recent Commits</div>';
+    for(var l=0;l<commits.length;l++) html+='<div class="list-item"><span class="item-name">'+esc(commits[l].commit.message.split('\n')[0].substring(0,50))+'</span><span class="item-meta">'+(commits[l].commit.author&&commits[l].commit.author.name||'—')+'<br>'+fmt(commits[l].commit.author&&commits[l].commit.author.date)+'</span></div>';
   }
-  if (contributors.length) {
-    html += '<div class="section-title" style="margin-top:16px">👥 Contributors</div>';
-    for (var m=0;m<contributors.length;m++) html += '<div class="list-item"><span class="item-name">'+esc(contributors[m].login)+'</span><span class="item-meta">'+contributors[m].contributions+' commits</span></div>';
+  if(contributors.length){
+    html+='<div class="section-title" style="margin-top:16px">👥 Contributors</div>';
+    for(var m=0;m<contributors.length;m++) html+='<div class="list-item"><span class="item-name">'+esc(contributors[m].login)+'</span><span class="item-meta">'+contributors[m].contributions+' commits</span></div>';
   }
-  document.getElementById('reportContent').innerHTML = html;
+  document.getElementById('reportContent').innerHTML=html;
 }
 
-function clearReport() {
+function clearReport(){
   hide('reportSt');
-  document.getElementById('reportContent').innerHTML = '<div class="empty">Connect and click Generate Report</div>';
+  document.getElementById('reportContent').innerHTML='<div class="empty">Connect and click Generate Report</div>';
 }
 
-// ── Tabs ──
-function switchTab(name, el) {
+function switchTab(name,el){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
   el.classList.add('active');
   document.getElementById('panel-'+name).classList.add('active');
 }
 
-// ── Helpers ──
-function setSt(id, type, msg) {
-  var el = document.getElementById(id);
-  el.className = 'st show ' + type;
-  el.innerHTML = type === 'loading' ? '<span class="spinner"></span>' + msg : msg;
+function setSt(id,type,msg){
+  var el=document.getElementById(id);
+  el.className='st show '+type;
+  el.innerHTML=type==='loading'?'<span class="spinner"></span>'+msg:msg;
 }
-function hide(id) { document.getElementById(id).className = 'st'; }
-function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function resetAll() {
-  if (confirm('Reset all saved credentials?')) {
-    localStorage.clear();
-    location.reload();
-  }
+function hide(id){document.getElementById(id).className='st';}
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function resetAll(){
+  if(confirm('Reset saved credentials?')){localStorage.clear();location.reload();}
 }
 </script>
 </body>
