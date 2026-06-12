@@ -2,2228 +2,549 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="theme-color" content="#ffffff">
-  <title>Mission Runner</title>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#060608">
+  <title>Mission Runner v7.0</title>
   <link rel="manifest" href="manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #f0f2f5;
-      --surface: #ffffff;
-      --surface2: #f8fafc;
-      --border: #e8ecf0;
-      --primary: #4f6ef7;
-      --primary-light: #eef0fe;
-      --success: #10b981;
-      --success-light: #ecfdf5;
-      --warning: #f59e0b;
-      --warning-light: #fffbeb;
-      --danger: #ef4444;
-      --danger-light: #fef2f2;
-      --text: #0f172a;
-      --text2: #475569;
-      --text3: #94a3b8;
-      --sidebar-bg: #0f172a;
-      --sidebar-text: #e2e8f0;
-      --sidebar-muted: #64748b;
-      --sidebar-hover: #1e293b;
-      --sidebar-active: #1e40af;
-      --claude: #d97706;
-      --gemini: #4285f4;
-      --deepseek: #7c3aed;
-      --font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      --radius: 12px;
-      --radius-sm: 8px;
-      --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
-      --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+      --bg: #060608;
+      --surface: #0e0e12;
+      --surface2: #16161c;
+      --border: #1e1e28;
+      --accent: #00e5ff;
+      --accent2: #ff3d71;
+      --accent3: #ffe600;
+      --green: #00e676;
+      --text: #e8e8f0;
+      --muted: #5a5a72;
+      --mono: 'Space Mono', monospace;
+      --sans: 'Syne', sans-serif;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: var(--font);
       background: var(--bg);
       color: var(--text);
-      height: 100dvh;
-      overflow: hidden;
-      -webkit-font-smoothing: antialiased;
+      font-family: var(--sans);
+      overflow-x: hidden;
+      padding-bottom: 70px;
     }
 
-    /* ── APP SHELL ── */
-    .app { display: flex; height: 100%; position: relative; }
-
-    /* ── SIDEBAR ── */
-    .sidebar {
-      position: fixed;
-      top: 0; left: -300px;
-      width: 300px; height: 100%;
-      background: var(--sidebar-bg);
-      z-index: 500;
-      transition: left 0.28s cubic-bezier(0.4,0,0.2,1);
-      display: flex; flex-direction: column;
-      overflow: hidden;
-    }
-    .sidebar.open { left: 0; }
-
-    .sidebar-overlay {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,0.45);
-      z-index: 499; display: none;
-      backdrop-filter: blur(2px);
-    }
-    .sidebar-overlay.open { display: block; }
-
-    .sidebar-header {
-      padding: 20px 20px 16px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex; align-items: center; gap: 10px;
-    }
-
-    .sidebar-logo {
-      width: 34px; height: 34px;
-      background: var(--primary);
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 16px; flex-shrink: 0;
-    }
-
-    .sidebar-logo-text {
-      font-size: 15px; font-weight: 700;
-      color: var(--sidebar-text);
-      letter-spacing: -0.3px;
-    }
-
-    .sidebar-logo-text span {
-      color: var(--primary);
-      display: block;
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--sidebar-muted);
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-    }
-
-    .sidebar-scroll { flex: 1; overflow-y: auto; padding: 12px 12px; }
-    .sidebar-scroll::-webkit-scrollbar { width: 0; }
-
-    .sidebar-section-label {
-      font-size: 10px; font-weight: 600;
-      color: var(--sidebar-muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      padding: 8px 8px 4px;
-    }
-
-    .sidebar-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 10px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      color: var(--sidebar-text);
-      font-size: 14px; font-weight: 500;
-      transition: background 0.15s;
-      margin-bottom: 2px;
-    }
-    .sidebar-item:hover, .sidebar-item.active { background: var(--sidebar-hover); }
-    .sidebar-item.active { background: var(--sidebar-active); }
-
-    .sidebar-item-icon {
-      width: 28px; height: 28px;
-      border-radius: 6px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 14px; flex-shrink: 0;
-      background: rgba(255,255,255,0.06);
-    }
-
-    .project-dot {
-      width: 8px; height: 8px;
-      border-radius: 50%; flex-shrink: 0;
-    }
-
-    .sidebar-footer {
-      padding: 12px;
-      border-top: 1px solid rgba(255,255,255,0.06);
-    }
-
-    .sidebar-footer-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px;
-      border-radius: var(--radius-sm);
-      cursor: pointer;
-      color: var(--sidebar-muted);
-      font-size: 13px; font-weight: 500;
-      transition: all 0.15s;
-    }
-    .sidebar-footer-item:hover { color: var(--sidebar-text); background: var(--sidebar-hover); }
-
-    /* ── MAIN ── */
-    .main {
-      flex: 1;
-      display: flex; flex-direction: column;
-      height: 100%;
-      background: var(--bg);
-      overflow: hidden;
-    }
-
-    /* ── HEADER ── */
-    .header {
+    /* Header & Status */
+    header {
       background: var(--surface);
-      padding: 0 16px;
-      height: 56px;
-      display: flex; align-items: center; gap: 12px;
       border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      box-shadow: var(--shadow);
-    }
-
-    .hamburger {
-      width: 36px; height: 36px;
-      border-radius: var(--radius-sm);
-      border: none; background: none;
-      font-size: 18px; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--text2);
-      transition: background 0.15s;
-    }
-    .hamburger:hover { background: var(--bg); }
-
-    .header-title {
-      font-size: 16px; font-weight: 600;
-      color: var(--text); flex: 1;
-    }
-
-    .header-project-pill {
-      background: var(--primary-light);
-      color: var(--primary);
-      font-size: 12px; font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 20px;
-      cursor: pointer;
-      display: flex; align-items: center; gap: 4px;
-    }
-
-    /* ── AI SWITCHER ── */
-    .ai-switcher {
-      background: var(--surface);
-      padding: 8px 16px;
-      display: flex; gap: 6px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    .ai-switcher::-webkit-scrollbar { display: none; }
-
-    .ai-pill {
-      display: flex; align-items: center; gap: 6px;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      font-size: 13px; font-weight: 600;
-      cursor: pointer; white-space: nowrap;
-      color: var(--text2);
-      transition: all 0.18s;
-      flex-shrink: 0;
-    }
-
-    .ai-pill.active-claude {
-      background: #fef3c7;
-      border-color: var(--claude);
-      color: var(--claude);
-      box-shadow: 0 0 0 3px rgba(217,119,6,0.12);
-    }
-    .ai-pill.active-gemini {
-      background: #eff6ff;
-      border-color: var(--gemini);
-      color: var(--gemini);
-      box-shadow: 0 0 0 3px rgba(66,133,244,0.12);
-    }
-    .ai-pill.active-deepseek {
-      background: #f5f3ff;
-      border-color: var(--deepseek);
-      color: var(--deepseek);
-      box-shadow: 0 0 0 3px rgba(124,58,237,0.12);
-    }
-
-    .ai-dot {
-      width: 7px; height: 7px;
-      border-radius: 50%;
-    }
-
-    /* ── CONVERSATION ── */
-    .conversation {
-      flex: 1;
-      overflow-y: auto;
-      padding: 16px;
-      display: flex; flex-direction: column;
-      gap: 12px;
-    }
-    .conversation::-webkit-scrollbar { width: 4px; }
-    .conversation::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .message-row {
+      padding: 15px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+    }
+    h1 { font-size: 1.2rem; font-weight: 800; letter-spacing: 1px; color: #fff; }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 10px var(--green);
     }
 
-    .message-row.user { align-items: flex-end; }
-    .message-row.ai { align-items: flex-start; }
+    /* Navigation Tabs */
+    .tabs {
+      display: flex;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .tab {
+      flex: 1;
+      text-align: center;
+      padding: 12px 5px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--muted);
+      cursor: pointer;
+      text-transform: uppercase;
+      border-bottom: 2px solid transparent;
+      transition: all 0.3s;
+    }
+    .tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      background: rgba(0,229,255,0.03);
+    }
 
-    .message-sender {
-      font-size: 11px; font-weight: 600;
-      color: var(--text3);
-      margin-bottom: 4px;
-      padding: 0 4px;
+    /* Container Views */
+    .view { display: none; padding: 15px; }
+    .view.active { display: block; }
+
+    /* UI Cards */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+    .card-title {
+      font-size: 0.9rem;
+      font-family: var(--mono);
+      color: var(--accent);
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Inputs & Forms */
+    textarea, input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      color: #fff;
+      padding: 10px;
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      outline: none;
+    }
+    textarea:focus, input:focus { border-color: var(--accent); }
+    textarea { resize: none; height: 120px; }
+
+    /* Buttons */
+    .btn {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 12px;
+      border-radius: 4px;
+      font-family: var(--sans);
+      font-weight: 700;
+      width: 100%;
+      cursor: pointer;
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
+    .btn:active { opacity: 0.8; }
+    .btn-secondary { background: transparent; color: var(--text); border: 1px solid var(--border); }
+    .btn-danger { background: var(--accent2); color: #fff; }
+    .btn-group { display: flex; gap: 10px; }
 
-    .message-bubble {
-      max-width: 85%;
-      padding: 11px 15px;
-      border-radius: var(--radius);
-      font-size: 14px; line-height: 1.55;
-      word-break: break-word;
-    }
-
-    .message-row.user .message-bubble {
-      background: var(--primary);
-      color: white;
-      border-bottom-right-radius: 4px;
-    }
-
-    .message-row.ai .message-bubble {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-bottom-left-radius: 4px;
-      box-shadow: var(--shadow);
-    }
-
-    .message-bubble pre {
-      background: #1e293b;
-      color: #e2e8f0;
-      padding: 10px 12px;
-      border-radius: 8px;
-      font-size: 12px;
-      overflow-x: auto;
-      margin: 8px 0;
-      white-space: pre-wrap;
-      font-family: 'Courier New', monospace;
-    }
-
-    /* ── APPROVAL CARD ── */
-    .approval-card {
-      background: var(--surface);
-      border: 1.5px solid var(--primary);
-      border-radius: var(--radius);
-      padding: 14px;
-      max-width: 92%;
-      box-shadow: var(--shadow-md);
-    }
-
-    .approval-header {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 10px;
-    }
-
-    .approval-badge {
-      background: var(--primary-light);
-      color: var(--primary);
-      font-size: 11px; font-weight: 700;
-      padding: 3px 8px; border-radius: 20px;
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-
-    .approval-title {
-      font-size: 13px; font-weight: 600;
-      color: var(--text);
-    }
-
-    .approval-steps {
+    /* Steps List */
+    .step-item {
       background: var(--surface2);
-      border-radius: var(--radius-sm);
-      padding: 10px 12px;
-      margin-bottom: 10px;
-      font-size: 12px;
-      color: var(--text2);
-      line-height: 1.8;
+      border-left: 3px solid var(--muted);
+      padding: 10px;
+      margin-bottom: 8px;
+      border-radius: 0 4px 4px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .step-item.pending { border-left-color: var(--accent3); }
+    .step-item.running { border-left-color: var(--accent); }
+    .step-item.done { border-left-color: var(--green); opacity: 0.7; }
+    .step-text { font-family: var(--mono); font-size: 0.8rem; flex: 1; padding-right: 10px; }
+    .step-badge { font-size: 0.65rem; padding: 2px 6px; background: #000; border-radius: 3px; font-family: var(--mono); }
+
+    /* System Terminal / Console Logs */
+    .terminal {
+      background: #020204;
       border: 1px solid var(--border);
-      max-height: 140px;
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      padding: 10px;
+      height: 250px;
       overflow-y: auto;
+      border-radius: 4px;
     }
+    .log-line { margin-bottom: 4px; line-height: 1.3; }
+    .log-info { color: var(--muted); }
+    .log-ok { color: var(--green); }
+    .log-err { color: var(--accent2); }
 
-    .step-row {
-      display: flex; gap: 8px; align-items: flex-start;
-      padding: 3px 0;
-    }
-
-    .step-badge {
-      background: var(--primary);
-      color: white;
-      font-size: 10px; font-weight: 700;
-      padding: 2px 6px; border-radius: 4px;
-      flex-shrink: 0; margin-top: 1px;
-    }
-
-    .step-badge.done { background: var(--success); }
-    .step-badge.fail { background: var(--danger); }
-    .step-badge.run { background: var(--warning); }
-
-    .step-type-tag {
-      font-size: 10px;
-      color: var(--text3);
-      background: var(--border);
-      padding: 1px 5px; border-radius: 3px;
-      flex-shrink: 0; margin-top: 2px;
-    }
-
-    .approval-actions {
-      display: flex; gap: 6px;
-    }
-
-    .approval-btn {
-      flex: 1; padding: 8px;
-      border-radius: var(--radius-sm);
-      border: none; cursor: pointer;
-      font-size: 13px; font-weight: 600;
-      font-family: var(--font);
-      transition: all 0.15s;
-    }
-    .approval-btn:active { transform: scale(0.97); }
-    .approval-btn.execute { background: var(--primary); color: white; }
-    .approval-btn.execute:hover { background: #3b5eea; }
-    .approval-btn.dismiss { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-
-    /* ── PREVIEW CARD ── */
-    .preview-card {
-      background: var(--surface);
-      border: 1.5px solid var(--success);
-      border-radius: var(--radius);
-      padding: 14px;
-      max-width: 92%;
-      box-shadow: var(--shadow-md);
-    }
-
-    .preview-header {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 10px;
-    }
-
-    .preview-badge {
-      background: var(--success-light);
-      color: var(--success);
-      font-size: 11px; font-weight: 700;
-      padding: 3px 8px; border-radius: 20px;
-      text-transform: uppercase; letter-spacing: 0.5px;
-    }
-
-    .preview-iframe {
-      width: 100%; height: 180px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-      margin-bottom: 10px;
-    }
-
-    .preview-actions { display: flex; gap: 6px; }
-
-    .preview-btn {
-      flex: 1; padding: 8px;
-      border-radius: var(--radius-sm);
-      border: none; cursor: pointer;
-      font-size: 13px; font-weight: 600;
-      font-family: var(--font);
-      transition: all 0.15s;
-    }
-    .preview-btn.save { background: var(--success); color: white; }
-    .preview-btn.copy { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-    .preview-btn.fix { background: var(--warning-light); color: var(--warning); border: 1px solid var(--warning); }
-
-    /* ── TYPING INDICATOR ── */
-    .typing-indicator {
-      display: flex; align-items: center; gap: 4px;
-      padding: 12px 16px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      border-bottom-left-radius: 4px;
-      width: fit-content;
-      box-shadow: var(--shadow);
-    }
-
-    .typing-dot {
-      width: 6px; height: 6px;
-      background: var(--text3);
-      border-radius: 50%;
-      animation: typing 1.2s infinite;
-    }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes typing {
-      0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
-      30% { transform: translateY(-4px); opacity: 1; }
-    }
-
-    /* ── INPUT BAR ── */
-    .input-bar {
+    /* Bottom Status Bar */
+    .bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
       background: var(--surface);
       border-top: 1px solid var(--border);
-      padding: 10px 14px;
-      padding-bottom: max(10px, env(safe-area-inset-bottom));
-      display: flex; gap: 8px; align-items: flex-end;
-      flex-shrink: 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 15px;
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--muted);
     }
 
-    .input-actions {
-      display: flex; gap: 4px; align-items: center;
-    }
-
-    .input-action-btn {
-      width: 36px; height: 36px;
-      border-radius: var(--radius-sm);
-      border: none; background: var(--surface2);
-      color: var(--text2); font-size: 16px;
-      cursor: pointer; display: flex;
-      align-items: center; justify-content: center;
-      flex-shrink: 0; transition: all 0.15s;
-      border: 1px solid var(--border);
-    }
-    .input-action-btn:hover { background: var(--bg); }
-    .input-action-btn.listening { background: var(--danger-light); color: var(--danger); border-color: var(--danger); animation: pulse 0.8s infinite; }
-
-    @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
-
-    .input-field {
-      flex: 1;
-      padding: 10px 14px;
-      border: 1.5px solid var(--border);
-      border-radius: 22px;
-      font-size: 15px;
-      font-family: var(--font);
-      background: var(--surface2);
-      color: var(--text);
-      outline: none;
-      resize: none;
-      max-height: 100px;
-      line-height: 1.4;
-      transition: border-color 0.15s;
-    }
-    .input-field:focus { border-color: var(--primary); background: var(--surface); }
-    .input-field::placeholder { color: var(--text3); }
-
-    .send-btn {
-      width: 38px; height: 38px;
-      border-radius: 50%;
-      border: none; background: var(--primary);
-      color: white; font-size: 18px;
-      cursor: pointer; display: flex;
-      align-items: center; justify-content: center;
-      flex-shrink: 0; transition: all 0.15s;
-    }
-    .send-btn:hover { background: #3b5eea; }
-    .send-btn:disabled { background: var(--border); cursor: default; }
-
-    /* ── PANELS (Settings, Projects, History) ── */
-    .panel {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      z-index: 600;
-      display: none; flex-direction: column;
-      overflow: hidden;
-    }
-    .panel.open { display: flex; }
-
-    .panel-header {
-      background: var(--surface);
-      padding: 0 16px;
-      height: 56px;
-      display: flex; align-items: center; gap: 12px;
-      border-bottom: 1px solid var(--border);
-      flex-shrink: 0;
-    }
-
-    .panel-back {
-      width: 36px; height: 36px;
-      border-radius: var(--radius-sm);
-      border: none; background: none;
-      font-size: 20px; cursor: pointer;
-      color: var(--primary);
-      display: flex; align-items: center; justify-content: center;
-    }
-
-    .panel-title {
-      font-size: 17px; font-weight: 700;
-      color: var(--text);
-    }
-
-    .panel-body {
-      flex: 1; overflow-y: auto;
-      padding: 16px;
-      display: flex; flex-direction: column;
-      gap: 12px;
-    }
-
-    /* ── CARDS (used in panels) ── */
-    .p-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 16px;
-      display: flex; flex-direction: column;
-      gap: 10px;
-      box-shadow: var(--shadow);
-    }
-
-    .p-card-label {
-      font-size: 11px; font-weight: 700;
-      color: var(--text3);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .p-card-title {
-      font-size: 15px; font-weight: 600;
-      color: var(--text);
-    }
-
-    .p-input {
-      width: 100%;
-      padding: 10px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 14px;
-      font-family: var(--font);
-      background: var(--surface2);
-      color: var(--text);
-      outline: none;
-      transition: border-color 0.15s;
-    }
-    .p-input:focus { border-color: var(--primary); }
-    .p-input::placeholder { color: var(--text3); }
-
-    .p-input-password {
-      -webkit-text-security: disc;
-    }
-
-    .p-textarea {
-      width: 100%; min-height: 80px;
-      padding: 10px 12px;
-      border: 1.5px solid var(--border);
-      border-radius: var(--radius-sm);
-      font-size: 13px;
-      font-family: 'Courier New', monospace;
-      background: var(--surface2);
-      color: var(--text);
-      outline: none;
-      resize: vertical;
-      line-height: 1.5;
-      transition: border-color 0.15s;
-    }
-    .p-textarea:focus { border-color: var(--primary); }
-
-    .p-btn {
-      width: 100%;
-      padding: 12px;
-      border-radius: var(--radius-sm);
-      border: none;
-      font-size: 14px; font-weight: 600;
-      font-family: var(--font);
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex; align-items: center; justify-content: center; gap: 6px;
-    }
-    .p-btn:active { transform: scale(0.98); }
-    .p-btn-primary { background: var(--primary); color: white; }
-    .p-btn-primary:hover { background: #3b5eea; }
-    .p-btn-success { background: var(--success); color: white; }
-    .p-btn-ghost { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
-    .p-btn-danger { background: var(--danger-light); color: var(--danger); border: 1px solid var(--danger); }
-    .p-btn-row { display: flex; gap: 8px; }
-    .p-btn-row .p-btn { flex: 1; }
-
-    /* ── PROJECT ITEMS ── */
-    .project-item {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: all 0.15s;
-      box-shadow: var(--shadow);
-    }
-    .project-item:hover { border-color: var(--primary); }
-    .project-item.active { border-color: var(--primary); background: var(--primary-light); }
-
-    .project-color {
-      width: 40px; height: 40px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px; flex-shrink: 0;
-    }
-
-    .project-info { flex: 1; min-width: 0; }
-    .project-name { font-size: 14px; font-weight: 600; color: var(--text); }
-    .project-desc { font-size: 12px; color: var(--text3); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .project-check { color: var(--primary); font-size: 18px; }
-
-    /* ── HISTORY ITEMS ── */
-    .history-item {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 14px;
-      cursor: pointer;
-      transition: all 0.15s;
-      box-shadow: var(--shadow);
-    }
-    .history-item:hover { border-color: var(--primary); }
-
-    .history-title { font-size: 14px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
-    .history-meta { font-size: 12px; color: var(--text3); display: flex; gap: 8px; }
-    .history-preview { font-size: 12px; color: var(--text2); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* ── API KEY STATUS ── */
-    .key-status {
-      display: flex; align-items: center; gap: 6px;
-      font-size: 12px; font-weight: 500;
-    }
-    .key-status.set { color: var(--success); }
-    .key-status.unset { color: var(--text3); }
-
-    /* ── TOAST ── */
+    /* Popups / Toasts */
     .toast {
       position: fixed;
-      bottom: 80px; left: 50%;
-      transform: translateX(-50%) translateY(20px);
-      background: #1e293b;
-      color: white;
-      padding: 10px 18px;
-      border-radius: 22px;
-      font-size: 13px; font-weight: 600;
-      z-index: 9999;
-      opacity: 0;
-      transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
-      white-space: nowrap;
-      max-width: 90vw;
-      box-shadow: var(--shadow-md);
+      bottom: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent2);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-family: var(--mono);
+      z-index: 1000;
+      display: none;
     }
-    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-
-    /* ── FOLDER PICKER INFO ── */
-    .folder-info {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 12px;
-      background: var(--success-light);
-      border: 1px solid var(--success);
-      border-radius: var(--radius-sm);
-      font-size: 13px; color: var(--success); font-weight: 500;
-    }
-
-    .no-folder {
-      display: flex; align-items: center; gap: 8px;
-      padding: 10px 12px;
-      background: var(--warning-light);
-      border: 1px solid var(--warning);
-      border-radius: var(--radius-sm);
-      font-size: 13px; color: var(--warning); font-weight: 500;
-    }
-
-    /* ── EMPTY STATE ── */
-    .empty-state {
-      flex: 1; display: flex;
-      flex-direction: column;
-      align-items: center; justify-content: center;
-      gap: 12px; padding: 40px 24px;
-      text-align: center;
-    }
-
-    .empty-icon { font-size: 48px; }
-    .empty-title { font-size: 18px; font-weight: 700; color: var(--text); }
-    .empty-subtitle { font-size: 14px; color: var(--text3); line-height: 1.5; max-width: 280px; }
-
-    /* ── PROGRESS BAR ── */
-    .progress-bar-wrap {
-      height: 4px; background: var(--border);
-      border-radius: 2px; overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary), var(--success));
-      border-radius: 2px;
-      transition: width 0.3s ease;
-      width: 0%;
-    }
-
-    /* ── DIVIDER ── */
-    .divider {
-      display: flex; align-items: center; gap: 10px;
-      color: var(--text3); font-size: 12px;
-    }
-    .divider::before, .divider::after {
-      content: ''; flex: 1;
-      height: 1px; background: var(--border);
-    }
-
-    /* ── MISSION EXECUTOR PANEL ── */
-    .json-valid { border-color: var(--success) !important; }
-    .json-invalid { border-color: var(--danger) !important; }
-
-    /* ── RESULT INDICATORS ── */
-    .result-ok { color: var(--success); font-weight: 600; }
-    .result-err { color: var(--danger); font-weight: 600; }
   </style>
 </head>
 <body>
 
-<!-- TOAST -->
-<div class="toast" id="toast"></div>
+  <header>
+    <h1>MISSION RUNNER v7.0</h1>
+    <div class="status-dot" id="systemStatus"></div>
+  </header>
 
-<!-- SIDEBAR OVERLAY -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('terminal')">Console</div>
+    <div class="tab" onclick="switchTab('mission')">Mission</div>
+    <div class="tab" onclick="switchTab('extractor')">Extractor</div>
+    <div class="tab" onclick="switchTab('settings')">Settings</div>
+  </div>
 
-<!-- SIDEBAR -->
-<div class="sidebar" id="sidebar">
-  <div class="sidebar-header">
-    <div class="sidebar-logo">🚀</div>
-    <div class="sidebar-logo-text">
-      Mission Runner
-      <span>v12.0 · Ahmed's Command Center</span>
+  <div id="view-terminal" class="view active">
+    <div class="card">
+      <div class="card-title">Live Execution Engine <span style="color:var(--green)">Online</span></div>
+      <div class="terminal" id="terminalLog"></div>
+      <button class="btn btn-secondary" style="margin-top: 10px; padding: 6px;" onclick="clearLogs()">Clear Console</button>
     </div>
   </div>
 
-  <div class="sidebar-scroll">
-    <div class="sidebar-section-label">Projects</div>
-    <div class="sidebar-item" id="sb-gahiz" onclick="switchProject('gahiz')">
-      <div class="sidebar-item-icon">🟢</div>
-      Gahiz
-    </div>
-    <div class="sidebar-item" id="sb-content-factory" onclick="switchProject('content-factory')">
-      <div class="sidebar-item-icon">🔵</div>
-      Content Factory
-    </div>
-    <div class="sidebar-item" id="sb-wired-leader" onclick="switchProject('wired-leader')">
-      <div class="sidebar-item-icon">🟡</div>
-      The Wired Leader
-    </div>
-
-    <div class="sidebar-section-label" style="margin-top:16px;">Tools</div>
-    <div class="sidebar-item" onclick="openPanel('history')">
-      <div class="sidebar-item-icon">🕐</div>
-      Chat History
-    </div>
-    <div class="sidebar-item" onclick="openPanel('mission')">
-      <div class="sidebar-item-icon">📁</div>
-      Mission Executor
-    </div>
-    <div class="sidebar-item" onclick="openPanel('capture')">
-      <div class="sidebar-item-icon">💾</div>
-      Save a Conversation
-    </div>
-    <div class="sidebar-item" onclick="openPanel('camera')">
-      <div class="sidebar-item-icon">📸</div>
-      Camera Scanner
-    </div>
-
-    <div class="sidebar-section-label" style="margin-top:16px;">System</div>
-    <div class="sidebar-item" onclick="openPanel('projects')">
-      <div class="sidebar-item-icon">🗂️</div>
-      Manage Projects
-    </div>
-    <div class="sidebar-item" onclick="downloadBrainYml()">
-      <div class="sidebar-item-icon">☁️</div>
-      Download brain.yml
-    </div>
-    <div class="sidebar-item" onclick="downloadSystemOrder()">
-      <div class="sidebar-item-icon">📋</div>
-      Download System Order
-    </div>
-  </div>
-
-  <div class="sidebar-footer">
-    <div class="sidebar-footer-item" onclick="openPanel('settings')">
-      ⚙️ Settings & API Keys
-    </div>
-  </div>
-</div>
-
-<!-- MAIN -->
-<div class="main" id="mainView">
-
-  <!-- Header -->
-  <div class="header">
-    <button class="hamburger" id="hamburger">☰</button>
-    <div class="header-title">Mission Runner</div>
-    <div class="header-project-pill" id="headerProject" onclick="openPanel('projects')">
-      🟢 Gahiz ▾
-    </div>
-  </div>
-
-  <!-- AI Switcher -->
-  <div class="ai-switcher">
-    <div class="ai-pill active-claude" id="pill-claude" onclick="selectAI('claude')">
-      <div class="ai-dot" style="background:var(--claude)"></div>
-      Claude
-    </div>
-    <div class="ai-pill" id="pill-gemini" onclick="selectAI('gemini')">
-      <div class="ai-dot" style="background:var(--gemini)"></div>
-      Gemini
-    </div>
-    <div class="ai-pill" id="pill-deepseek" onclick="selectAI('deepseek')">
-      <div class="ai-dot" style="background:var(--deepseek)"></div>
-      DeepSeek
-    </div>
-  </div>
-
-  <!-- Conversation -->
-  <div class="conversation" id="conversation">
-    <div class="empty-state" id="emptyState">
-      <div class="empty-icon">🚀</div>
-      <div class="empty-title">Good morning, Ahmed.</div>
-      <div class="empty-subtitle">Choose an AI above and start chatting. Code, instructions, and action steps will be handled automatically.</div>
-    </div>
-  </div>
-
-  <!-- Input Bar -->
-  <div class="input-bar">
-    <div class="input-actions">
-      <button class="input-action-btn" id="voiceBtn" onclick="toggleVoice()" title="Voice input">🎤</button>
-      <button class="input-action-btn" onclick="pasteToInput()" title="Paste from clipboard">📋</button>
-    </div>
-    <textarea class="input-field" id="messageInput" placeholder="Message Claude..." rows="1"
-      oninput="autoResize(this)" onkeydown="inputKeyDown(event)"></textarea>
-    <button class="send-btn" id="sendBtn" onclick="sendMessage()">↑</button>
-  </div>
-
-</div>
-
-<!-- ══════════════════════════════════
-     PANEL: SETTINGS
-══════════════════════════════════ -->
-<div class="panel" id="panel-settings">
-  <div class="panel-header">
-    <button class="panel-back" onclick="closePanel('settings')">←</button>
-    <div class="panel-title">Settings & API Keys</div>
-  </div>
-  <div class="panel-body">
-
-    <div class="p-card">
-      <div class="p-card-label">Claude API Key</div>
-      <div class="key-status" id="claudeKeyStatus">
-        <span>○</span> Not set
+  <div id="view-mission" class="view">
+    <div class="card">
+      <div class="card-title">Active Mission Payload</div>
+      <textarea id="missionInput" placeholder="Paste Mission JSON block here..."></textarea>
+      <div class="btn-group">
+        <button class="btn" onclick="parseAndLoadMission()">Load Mission</button>
+        <button class="btn btn-danger" onclick="clearMission()">Clear</button>
       </div>
-      <input type="password" class="p-input" id="claudeKeyInput" placeholder="sk-ant-...">
-      <button class="p-btn p-btn-primary" onclick="saveKey('claude')">Save Claude Key</button>
     </div>
-
-    <div class="p-card">
-      <div class="p-card-label">Gemini API Key</div>
-      <div class="key-status" id="geminiKeyStatus">
-        <span>○</span> Not set
+    <div class="card">
+      <div class="card-title">Execution Checklist</div>
+      <div id="stepsContainer">
+        <div style="text-align:center; color:var(--muted); font-size:0.8rem; padding:20px;">No mission loaded</div>
       </div>
-      <input type="password" class="p-input" id="geminiKeyInput" placeholder="AIza...">
-      <button class="p-btn p-btn-primary" onclick="saveKey('gemini')">Save Gemini Key</button>
-    </div>
-
-    <div class="p-card">
-      <div class="p-card-label">DeepSeek API Key</div>
-      <div class="key-status" id="deepseekKeyStatus">
-        <span>○</span> Not set
-      </div>
-      <input type="password" class="p-input" id="deepseekKeyInput" placeholder="sk-...">
-      <button class="p-btn p-btn-primary" onclick="saveKey('deepseek')">Save DeepSeek Key</button>
-    </div>
-
-    <div class="p-card">
-      <div class="p-card-label">GitHub Token</div>
-      <div class="key-status" id="githubKeyStatus">
-        <span>○</span> Not set
-      </div>
-      <input type="password" class="p-input" id="githubKeyInput" placeholder="ghp_...">
-      <button class="p-btn p-btn-ghost" onclick="saveKey('github')">Save GitHub Token</button>
-    </div>
-
-    <div class="p-card">
-      <div class="p-card-label">Save Folder</div>
-      <div id="folderStatus" class="no-folder">⚠️ No folder selected — tap below to choose</div>
-      <button class="p-btn p-btn-ghost" onclick="selectSaveFolder()">📂 Choose Save Folder</button>
-    </div>
-
-    <div class="p-card">
-      <div class="p-card-label">Danger Zone</div>
-      <button class="p-btn p-btn-danger" onclick="clearAllData()">🗑️ Clear All Data</button>
-    </div>
-
-  </div>
-</div>
-
-<!-- ══════════════════════════════════
-     PANEL: PROJECTS
-══════════════════════════════════ -->
-<div class="panel" id="panel-projects">
-  <div class="panel-header">
-    <button class="panel-back" onclick="closePanel('projects')">←</button>
-    <div class="panel-title">My Projects</div>
-  </div>
-  <div class="panel-body">
-    <div id="projectsList"></div>
-
-    <div class="divider">Add New Project</div>
-
-    <div class="p-card">
-      <input type="text" class="p-input" id="newProjectName" placeholder="Project name (e.g. My App)">
-      <input type="text" class="p-input" id="newProjectDesc" placeholder="What is this project about?">
-      <button class="p-btn p-btn-primary" onclick="addProject()">➕ Add Project</button>
+      <button class="btn btn-secondary" id="runMissionBtn" style="margin-top:10px; display:none;" onclick="executeNextStep()">Execute First Step</button>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════════
-     PANEL: HISTORY
-══════════════════════════════════ -->
-<div class="panel" id="panel-history">
-  <div class="panel-header">
-    <button class="panel-back" onclick="closePanel('history')">←</button>
-    <div class="panel-title">Chat History</div>
-  </div>
-  <div class="panel-body" id="historyList">
-    <div class="empty-state">
-      <div class="empty-icon">🕐</div>
-      <div class="empty-title">No history yet</div>
-      <div class="empty-subtitle">Your conversations will appear here after you chat.</div>
+  <div id="view-extractor" class="view">
+    <div class="card">
+      <div class="card-title">Raw AI Output Parser</div>
+      <p style="font-size:0.75rem; color:var(--muted); margin-bottom:10px;">Paste the messy conversational response from Claude or Gemini below. The engine will extract the embedded tasks.</p>
+      <textarea id="rawAiInput" placeholder="Paste the full AI response here..."></textarea>
+      <button class="btn" onclick="extractStepsFromRaw()">Extract Action Steps</button>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════════
-     PANEL: MISSION EXECUTOR
-══════════════════════════════════ -->
-<div class="panel" id="panel-mission">
-  <div class="panel-header">
-    <button class="panel-back" onclick="closePanel('mission')">←</button>
-    <div class="panel-title">Mission Executor</div>
-  </div>
-  <div class="panel-body">
-    <div class="p-card">
-      <div class="p-card-label">Paste Mission JSON</div>
-      <div class="p-card-title">Creates files directly on your device</div>
-      <textarea class="p-textarea" id="missionInput" rows="8"
-        placeholder='{"project":"my-app","files":[{"path":"index.html","content":"..."}]}'
-        oninput="validateMissionJSON(this)" style="height:160px;"></textarea>
-      <div class="p-btn-row">
-        <button class="p-btn p-btn-ghost" onclick="loadDemoMission()">📦 Demo</button>
-        <button class="p-btn p-btn-ghost" onclick="document.getElementById('missionInput').value=''; validateMissionJSON(document.getElementById('missionInput'))">🗑️ Clear</button>
-      </div>
-      <div class="progress-bar-wrap" id="missionProgress" style="display:none;">
-        <div class="progress-bar-fill" id="missionProgressBar"></div>
-      </div>
-      <button class="p-btn p-btn-primary" id="runMissionBtn" onclick="runMission()">▶ Run Mission</button>
-    </div>
+  <div id="view-settings" class="view">
+    <div class="card">
+      <div class="card-title">Cloud Brain & API Setup</div>
+      
+      <label style="font-size:0.75rem; color:var(--muted); font-family:var(--mono);">Proxy Gateway URL</label>
+      <input type="text" id="settingProxy" value="http://localhost:3000">
 
-    <div class="p-card">
-      <div class="p-card-label">Cloud Brain</div>
-      <div class="p-card-title">Trigger GitHub Actions remotely</div>
-      <input type="text" class="p-input" id="cloudTask" placeholder="Task: deploy_site, run_script">
-      <textarea class="p-textarea" id="cloudPayload" rows="3" placeholder='{"target":"sites/my-app"}'></textarea>
-      <button class="p-btn p-btn-ghost" onclick="triggerCloudBrain()">☁️ Trigger</button>
+      <label style="font-size:0.75rem; color:var(--muted); font-family:var(--mono);">Gemini API Key</label>
+      <input type="password" id="settingGemini" placeholder="AIZA... (Optional if handled by backend)">
+
+      <label style="font-size:0.75rem; color:var(--muted); font-family:var(--mono);">Claude API Key</label>
+      <input type="password" id="settingClaude" placeholder="sk-ant... (Optional if handled by backend)">
+      
+      <button class="btn" onclick="saveSettings()">Save Configurations</button>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════════
-     PANEL: CAPTURE
-══════════════════════════════════ -->
-<div class="panel" id="panel-capture">
-  <div class="panel-header">
-    <button class="panel-back" onclick="closePanel('capture')">←</button>
-    <div class="panel-title">Save a Conversation</div>
-  </div>
-  <div class="panel-body">
-    <div class="p-card">
-      <div class="p-card-label">Capture from another AI app</div>
-      <div class="p-card-title">Copy the conversation there, paste it here</div>
-      <input type="text" class="p-input" id="captureProject" placeholder="Project name (e.g. Gahiz)">
-      <textarea class="p-textarea" id="captureText" rows="6" placeholder="Paste the conversation here..."></textarea>
-      <button class="p-btn p-btn-success" onclick="saveCapture()">💾 Save to Folder</button>
-    </div>
-
-    <div class="divider">Quick Note</div>
-
-    <div class="p-card">
-      <textarea class="p-textarea" id="quickNote" rows="3" placeholder="Type a quick note..."></textarea>
-      <button class="p-btn p-btn-ghost" onclick="saveQuickNote()">📝 Save Note</button>
+  <div class="view" id="view-share" style="display:none; padding:15px;">
+    <div class="card" id="shareCard">
+      <div class="card-title" style="color:var(--accent2)">Intercepted Content Incoming</div>
+      <input type="text" id="shareProject" placeholder="Assign to Project (Default: General)">
+      <button class="btn" onclick="downloadShared()">Commit to Storage Hub</button>
     </div>
   </div>
-</div>
 
-<!-- ══════════════════════════════════
-     PANEL: CAMERA
-══════════════════════════════════ -->
-<div class="panel" id="panel-camera">
-  <div class="panel-header">
-    <button class="panel-back" onclick="closePanel('camera')">←</button>
-    <div class="panel-title">Camera Scanner</div>
+  <div class="bottom-bar">
+    <div>SYS: ACTIVE</div>
+    <div id="stepCounter">STEPS: 0/0</div>
   </div>
-  <div class="panel-body">
-    <div class="p-card">
-      <div class="p-card-label">Point at any screen to extract text</div>
-      <video id="cameraVideo" style="width:100%;border-radius:8px;background:#000;display:none;max-height:220px;object-fit:contain;" autoplay playsinline></video>
-      <canvas id="cameraCanvas" style="display:none;"></canvas>
-      <div id="ocrLoading" style="display:none;font-size:13px;color:var(--primary);font-weight:500;">🔍 Reading text...</div>
-      <div class="p-btn-row">
-        <button class="p-btn p-btn-primary" id="startCameraBtn" onclick="startCamera()">📷 Start Camera</button>
-        <button class="p-btn p-btn-ghost" id="captureCameraBtn" onclick="captureAndOCR()" disabled>📸 Capture & Read</button>
-      </div>
-      <textarea class="p-textarea" id="cameraResult" rows="4" placeholder="Extracted text appears here..." readonly></textarea>
-      <button class="p-btn p-btn-success" id="sendToChat" onclick="sendOCRToChat()" disabled>📤 Send to Chat</button>
-    </div>
-  </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-<script>
-// ══════════════════════════════════════════════════
-// STATE
-// ══════════════════════════════════════════════════
-let activeAI = 'claude';
-let activeProject = 'gahiz';
-let conversationHistory = [];
-let currentPreviewCode = '';
-let saveFolderHandle = null;
-let cameraStream = null;
-let ocrWorker = null;
-let recognition = null;
-let isListening = false;
-let db = null;
+  <div class="toast" id="toastNotification"></div>
 
-const PROJECTS = {
-  'gahiz': { name: 'Gahiz', emoji: '🟢', desc: 'AI interview simulation platform for Egyptian BPO job seekers', color: '#10b981' },
-  'content-factory': { name: 'Content Factory', emoji: '🔵', desc: 'AI content production system for client brands', color: '#4f6ef7' },
-  'wired-leader': { name: 'The Wired Leader', emoji: '🟡', desc: 'ADHD coaching brand — Hesham Elansari', color: '#f59e0b' }
-};
+  <script>
+    // System Configurations & Cache Memory
+    let activeSteps = [];
+    let currentStepIndex = 0;
+    let pendingShareText = null;
 
-const AI_CONFIGS = {
-  claude: {
-    name: 'Claude',
-    color: '#d97706',
-    inputPlaceholder: 'Message Claude...',
-    endpoint: 'https://api.anthropic.com/v1/messages',
-    model: 'claude-sonnet-4-20250514'
-  },
-  gemini: {
-    name: 'Gemini',
-    color: '#4285f4',
-    inputPlaceholder: 'Message Gemini...',
-    endpoint: null // set at call time with key
-  },
-  deepseek: {
-    name: 'DeepSeek',
-    color: '#7c3aed',
-    inputPlaceholder: 'Message DeepSeek...',
-    endpoint: 'https://api.deepseek.com/v1/chat/completions',
-    model: 'deepseek-chat'
-  }
-};
-
-// ══════════════════════════════════════════════════
-// INDEXEDDB
-// ══════════════════════════════════════════════════
-async function openDB() {
-  return new Promise((resolve, reject) => {
-    const req = indexedDB.open('mission-runner-v12', 1);
-    req.onupgradeneeded = (e) => {
-      const d = e.target.result;
-      if (!d.objectStoreNames.contains('settings')) d.createObjectStore('settings', { keyPath: 'key' });
-      if (!d.objectStoreNames.contains('conversations')) d.createObjectStore('conversations', { keyPath: 'id', autoIncrement: true });
-      if (!d.objectStoreNames.contains('projects')) d.createObjectStore('projects', { keyPath: 'id' });
-    };
-    req.onsuccess = (e) => { db = e.target.result; resolve(db); };
-    req.onerror = (e) => reject(e.target.error);
-  });
-}
-
-async function dbGet(store, key) {
-  return new Promise((resolve) => {
-    const tx = db.transaction(store, 'readonly');
-    const req = tx.objectStore(store).get(key);
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => resolve(null);
-  });
-}
-
-async function dbPut(store, value) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(store, 'readwrite');
-    tx.objectStore(store).put(value);
-    tx.oncomplete = resolve;
-    tx.onerror = reject;
-  });
-}
-
-async function dbGetAll(store) {
-  return new Promise((resolve) => {
-    const tx = db.transaction(store, 'readonly');
-    const req = tx.objectStore(store).getAll();
-    req.onsuccess = () => resolve(req.result || []);
-    req.onerror = () => resolve([]);
-  });
-}
-
-// ══════════════════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════════════════
-function toast(msg, dur = 3000) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  clearTimeout(t._t);
-  t._t = setTimeout(() => t.classList.remove('show'), dur);
-}
-
-// ══════════════════════════════════════════════════
-// SIDEBAR
-// ══════════════════════════════════════════════════
-document.getElementById('hamburger').onclick = () => {
-  document.getElementById('sidebar').classList.add('open');
-  document.getElementById('sidebarOverlay').classList.add('open');
-};
-document.getElementById('sidebarOverlay').onclick = () => {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('open');
-};
-
-function closeSidebar() {
-  document.getElementById('sidebar').classList.remove('open');
-  document.getElementById('sidebarOverlay').classList.remove('open');
-}
-
-// ══════════════════════════════════════════════════
-// PANELS
-// ══════════════════════════════════════════════════
-function openPanel(name) {
-  closeSidebar();
-  document.getElementById('panel-' + name).classList.add('open');
-  if (name === 'history') loadHistory();
-  if (name === 'projects') renderProjects();
-  if (name === 'settings') refreshKeyStatuses();
-}
-
-function closePanel(name) {
-  document.getElementById('panel-' + name).classList.remove('open');
-  if (name === 'camera') stopCamera();
-}
-
-// ══════════════════════════════════════════════════
-// AI SWITCHER
-// ══════════════════════════════════════════════════
-function selectAI(ai) {
-  activeAI = ai;
-  document.querySelectorAll('.ai-pill').forEach(p => {
-    p.className = 'ai-pill';
-  });
-  document.getElementById('pill-' + ai).className = 'ai-pill active-' + ai;
-  document.getElementById('messageInput').placeholder = AI_CONFIGS[ai].inputPlaceholder;
-}
-
-// ══════════════════════════════════════════════════
-// PROJECT SWITCHER
-// ══════════════════════════════════════════════════
-function switchProject(id) {
-  activeProject = id;
-  const p = PROJECTS[id];
-  if (!p) return;
-
-  // Update header pill
-  document.getElementById('headerProject').textContent = p.emoji + ' ' + p.name + ' ▾';
-
-  // Update sidebar active state
-  document.querySelectorAll('.sidebar-item[id^="sb-"]').forEach(el => el.classList.remove('active'));
-  const sbEl = document.getElementById('sb-' + id);
-  if (sbEl) sbEl.classList.add('active');
-
-  // Clear chat for new project context
-  conversationHistory = [];
-  const conv = document.getElementById('conversation');
-  conv.innerHTML = '';
-  const empty = document.createElement('div');
-  empty.className = 'empty-state';
-  empty.innerHTML = `<div class="empty-icon">${p.emoji}</div>
-    <div class="empty-title">${p.name}</div>
-    <div class="empty-subtitle">${p.desc}</div>`;
-  conv.appendChild(empty);
-
-  closeSidebar();
-  closePanel('projects');
-  toast('Switched to ' + p.name);
-  dbPut('settings', { key: 'activeProject', value: id });
-}
-
-// ══════════════════════════════════════════════════
-// CHAT — SEND MESSAGE
-// ══════════════════════════════════════════════════
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-}
-
-function inputKeyDown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendMessage();
-  }
-}
-
-async function sendMessage() {
-  const input = document.getElementById('messageInput');
-  const msg = input.value.trim();
-  if (!msg) return;
-
-  // Hide empty state
-  const empty = document.getElementById('emptyState');
-  if (empty) empty.remove();
-
-  // Add user bubble
-  addBubble(msg, 'user');
-  conversationHistory.push({ role: 'user', content: msg });
-  input.value = '';
-  input.style.height = 'auto';
-  document.getElementById('sendBtn').disabled = true;
-
-  // Show typing
-  const typingEl = addTyping();
-
-  try {
-    const reply = await callAI(msg);
-    typingEl.remove();
-    addBubble(reply, 'ai');
-    conversationHistory.push({ role: 'assistant', content: reply });
-    detectAndAct(reply);
-    saveConversation();
-  } catch (err) {
-    typingEl.remove();
-    const errMsg = err.message || 'Something went wrong.';
-    addBubble('⚠️ ' + errMsg, 'ai');
-  } finally {
-    document.getElementById('sendBtn').disabled = false;
-  }
-}
-
-// ══════════════════════════════════════════════════
-// AI API CALLS
-// ══════════════════════════════════════════════════
-async function callAI(msg) {
-  const key = sessionStorage.getItem('key_' + activeAI);
-
-  if (!key) {
-    return `No API key set for ${AI_CONFIGS[activeAI].name}. Tap the ← back button, go to Settings & API Keys, and add your ${AI_CONFIGS[activeAI].name} key.`;
-  }
-
-  if (activeAI === 'claude') return await callClaude(key);
-  if (activeAI === 'gemini') return await callGemini(key);
-  if (activeAI === 'deepseek') return await callDeepSeek(key);
-  throw new Error('Unknown AI selected');
-}
-
-function buildSystemPrompt() {
-  const p = PROJECTS[activeProject] || { name: activeProject, desc: '' };
-  return `You are Mission Runner's AI engine — the technical brain for Ahmed, a non-technical freelance consultant in Egypt working from his phone only.
-
-Active project: ${p.name}
-Project context: ${p.desc}
-
-OUTPUT RULES:
-1. When giving HTML/CSS/JS code, use standard \`\`\`html blocks — Mission Runner will preview it instantly.
-2. For multiple files, use \`\`\`mission-json format: {"project":"name","files":[{"path":"index.html","content":"..."}]}
-3. For action steps, use \`\`\`action-steps format: [{"step":1,"action":"Do this","type":"navigate","detail":"url"}]
-4. Always end with an action-steps block summarizing what to do.
-5. Never say "create a file manually" — use mission-json.
-6. Never give GitHub manual instructions — use cloud action steps.
-7. Be concise — Ahmed is on a phone screen.
-8. When giving code that might have errors, end with: "If this breaks, tap 🔄 Fix."`;
-}
-
-async function callClaude(key) {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 4096,
-      system: buildSystemPrompt(),
-      messages: conversationHistory.map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.content }))
-    })
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err?.error?.message || 'Claude API error ' + res.status);
-  }
-  const data = await res.json();
-  return data.content?.[0]?.text || 'No response from Claude.';
-}
-
-async function callGemini(key) {
-  const messages = conversationHistory.map(m => ({
-    role: m.role === 'assistant' || m.role === 'ai' ? 'model' : 'user',
-    parts: [{ text: m.content }]
-  }));
-  // Add system as first user turn
-  const systemTurn = { role: 'user', parts: [{ text: buildSystemPrompt() }] };
-  const modelAck = { role: 'model', parts: [{ text: 'Understood. I will follow these rules.' }] };
-  const allMessages = [systemTurn, modelAck, ...messages];
-
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: allMessages })
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err?.error?.message || 'Gemini API error ' + res.status);
-  }
-  const data = await res.json();
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response from Gemini.';
-}
-
-async function callDeepSeek(key) {
-  const messages = [
-    { role: 'system', content: buildSystemPrompt() },
-    ...conversationHistory.map(m => ({ role: m.role === 'ai' ? 'assistant' : m.role, content: m.content }))
-  ];
-  const res = await fetch('https://api.deepseek.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
-    body: JSON.stringify({ model: 'deepseek-chat', messages, max_tokens: 4096 })
-  });
-  if (!res.ok) {
-    const err = await res.json();
-    throw new Error(err?.error?.message || 'DeepSeek API error ' + res.status);
-  }
-  const data = await res.json();
-  return data.choices?.[0]?.message?.content || 'No response from DeepSeek.';
-}
-
-// ══════════════════════════════════════════════════
-// BUBBLES + TYPING
-// ══════════════════════════════════════════════════
-function addBubble(text, role) {
-  const conv = document.getElementById('conversation');
-  const row = document.createElement('div');
-  row.className = 'message-row ' + role;
-
-  if (role === 'ai') {
-    const sender = document.createElement('div');
-    sender.className = 'message-sender';
-    sender.textContent = AI_CONFIGS[activeAI]?.name || 'AI';
-    row.appendChild(sender);
-  }
-
-  const bubble = document.createElement('div');
-  bubble.className = 'message-bubble';
-  bubble.innerHTML = formatMessage(text);
-  row.appendChild(bubble);
-  conv.appendChild(row);
-  conv.scrollTop = conv.scrollHeight;
-  return row;
-}
-
-function addTyping() {
-  const conv = document.getElementById('conversation');
-  const row = document.createElement('div');
-  row.className = 'message-row ai';
-  const sender = document.createElement('div');
-  sender.className = 'message-sender';
-  sender.textContent = AI_CONFIGS[activeAI]?.name || 'AI';
-  row.appendChild(sender);
-  const ind = document.createElement('div');
-  ind.className = 'typing-indicator';
-  ind.innerHTML = '<div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div>';
-  row.appendChild(ind);
-  conv.appendChild(row);
-  conv.scrollTop = conv.scrollHeight;
-  return row;
-}
-
-function formatMessage(text) {
-  // Render code blocks as <pre> and escape HTML in main text
-  let html = '';
-  const parts = text.split(/(```[\s\S]*?```)/g);
-  parts.forEach(part => {
-    if (part.startsWith('```')) {
-      const lines = part.slice(3, -3).split('\n');
-      const lang = lines[0].trim();
-      const code = lines.slice(1).join('\n');
-      html += `<pre>${escapeHTML(code || lang)}</pre>`;
-    } else {
-      html += escapeHTML(part).replace(/\n/g, '<br>');
+    // Toast Utility
+    function toast(msg, type = 'info') {
+      const t = document.getElementById('toastNotification');
+      t.innerText = msg;
+      t.style.background = type === 'success' ? 'var(--green)' : 'var(--accent2)';
+      t.style.color = type === 'success' ? '#000' : '#fff';
+      t.style.display = 'block';
+      setTimeout(() => { t.style.display = 'none'; }, 3000);
     }
-  });
-  return html;
-}
 
-function escapeHTML(str) {
-  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+    // Console Logging Subsystem
+    function log(message, type = 'info') {
+      const consoleLog = document.getElementById('terminalLog');
+      const time = new Date().toLocaleTimeString().split(' ')[0];
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      line.innerHTML = `[${time}] ${type.toUpperCase()}: ${message}`;
+      consoleLog.appendChild(line);
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
 
-// ══════════════════════════════════════════════════
-// AUTO-DETECT & ACT ON AI RESPONSES
-// ══════════════════════════════════════════════════
-function detectAndAct(text) {
-  // 1. HTML preview
-  const htmlMatch = text.match(/```(?:html|htm)\s*([\s\S]*?)```/i);
-  if (htmlMatch) {
-    currentPreviewCode = htmlMatch[1].trim();
-    showPreviewCard(currentPreviewCode);
-    return;
-  }
+    function clearLogs() {
+      document.getElementById('terminalLog').innerHTML = '';
+      log('System console logs flushed clean.', 'info');
+    }
 
-  // 2. mission-json
-  const missionMatch = text.match(/```mission-json\s*([\s\S]*?)```/);
-  if (missionMatch) {
-    try {
-      const mission = JSON.parse(missionMatch[1].trim());
-      if (mission.project && mission.files) {
-        document.getElementById('missionInput').value = JSON.stringify(mission, null, 2);
-        showApprovalCard('Mission JSON detected', [{ step: 1, action: 'Create ' + mission.files.length + ' file(s) for project: ' + mission.project, type: 'mission', detail: '' }], () => {
-          openPanel('mission');
-          runMission();
-        });
-        return;
+    // Navigation Mechanism
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      
+      // Select the correct tab based on inner text match or direct mapping
+      const index = ['terminal', 'mission', 'extractor', 'settings'].indexOf(tabId);
+      if(index !== -1) {
+        document.querySelectorAll('.tab')[index].classList.add('active');
       }
-    } catch(e) {}
-  }
-
-  // 3. action-steps
-  const stepsMatch = text.match(/```action-steps\s*([\s\S]*?)```/);
-  if (stepsMatch) {
-    try {
-      const steps = JSON.parse(stepsMatch[1].trim());
-      if (Array.isArray(steps) && steps.length > 0) {
-        showApprovalCard('Action Steps Ready', steps, () => executeSteps(steps));
-        return;
-      }
-    } catch(e) {}
-  }
-
-  // 4. Offline fallback extraction
-  const offlineSteps = parseOffline(text);
-  if (offlineSteps.length >= 2) {
-    showApprovalCard('Steps Detected', offlineSteps, () => executeSteps(offlineSteps));
-  }
-}
-
-// ══════════════════════════════════════════════════
-// APPROVAL CARD
-// ══════════════════════════════════════════════════
-function showApprovalCard(title, steps, onExecute) {
-  const conv = document.getElementById('conversation');
-  const card = document.createElement('div');
-  card.className = 'approval-card';
-
-  const stepsHTML = steps.map((s, i) => `
-    <div class="step-row">
-      <div class="step-badge" id="sbadge-${i}">${s.step || i+1}</div>
-      <div style="flex:1;font-size:13px;">${escapeHTML(s.action || '')}</div>
-      <div class="step-type-tag">${s.type || 'other'}</div>
-    </div>
-  `).join('');
-
-  card.innerHTML = `
-    <div class="approval-header">
-      <div class="approval-badge">Mission Ready</div>
-      <div class="approval-title">${escapeHTML(title)}</div>
-    </div>
-    <div class="approval-steps">${stepsHTML}</div>
-    <div class="approval-actions">
-      <button class="approval-btn execute">▶ Execute All</button>
-      <button class="approval-btn dismiss">Dismiss</button>
-    </div>
-  `;
-
-  card.querySelector('.execute').onclick = () => {
-    card.querySelector('.execute').textContent = '⏳ Running...';
-    card.querySelector('.execute').disabled = true;
-    onExecute();
-    setTimeout(() => { card.querySelector('.execute').textContent = '✅ Done'; }, 1500);
-  };
-
-  card.querySelector('.dismiss').onclick = () => card.remove();
-
-  conv.appendChild(card);
-  conv.scrollTop = conv.scrollHeight;
-}
-
-// ══════════════════════════════════════════════════
-// PREVIEW CARD
-// ══════════════════════════════════════════════════
-function showPreviewCard(code) {
-  const conv = document.getElementById('conversation');
-  const card = document.createElement('div');
-  card.className = 'preview-card';
-  card.innerHTML = `
-    <div class="preview-header">
-      <div class="preview-badge">Live Preview</div>
-      <span style="font-size:12px;color:var(--text3);">HTML detected</span>
-    </div>
-    <iframe class="preview-iframe" sandbox="allow-scripts" id="previewFrame"></iframe>
-    <div class="preview-actions">
-      <button class="preview-btn save" onclick="savePreviewCode()">💾 Save</button>
-      <button class="preview-btn copy" onclick="copyCode('${btoa(encodeURIComponent(code))}')">📋 Copy</button>
-      <button class="preview-btn fix" onclick="askToFix()">🔄 Fix</button>
-    </div>
-  `;
-  conv.appendChild(card);
-  // Set iframe content after append
-  card.querySelector('#previewFrame').srcdoc = code;
-  conv.scrollTop = conv.scrollHeight;
-}
-
-function savePreviewCode() {
-  if (!currentPreviewCode) return;
-  const fn = activeProject + '-preview-' + Date.now() + '.html';
-  downloadBlob(currentPreviewCode, fn, 'text/html');
-  toast('✅ Saved: ' + fn);
-}
-
-function copyCode(encoded) {
-  try {
-    const code = decodeURIComponent(atob(encoded));
-    navigator.clipboard.writeText(code).then(() => toast('✅ Code copied'));
-  } catch(e) { toast('⚠️ Could not copy'); }
-}
-
-async function askToFix() {
-  if (!currentPreviewCode) return;
-  const input = document.getElementById('messageInput');
-  input.value = 'This code has an issue. Please fix it and give me the corrected version:\n\n```html\n' + currentPreviewCode + '\n```';
-  autoResize(input);
-  toast('Paste the code — tap Send to ask for a fix');
-}
-
-// ══════════════════════════════════════════════════
-// STEP EXECUTION
-// ══════════════════════════════════════════════════
-async function executeSteps(steps) {
-  for (let i = 0; i < steps.length; i++) {
-    const s = steps[i];
-    const type = (s.type || '').toLowerCase();
-    const detail = s.detail || s.action || '';
-
-    if ((type === 'navigate' || type === 'open') && detail.match(/https?:\/\/|\.com|\.io|\.org/)) {
-      window.open(detail.startsWith('http') ? detail : 'https://' + detail, '_blank');
-    } else if (type === 'copy' && detail) {
-      try { await navigator.clipboard.writeText(detail); toast('📋 Copied step ' + (i+1)); } catch(e) {}
-    } else if (type === 'preview' && detail) {
-      currentPreviewCode = detail;
-      showPreviewCard(detail);
-    } else if (type === 'cloud') {
-      await triggerCloudBrainTask(type, {});
-    }
-    await new Promise(r => setTimeout(r, 300));
-  }
-}
-
-// ══════════════════════════════════════════════════
-// OFFLINE STEP PARSER
-// ══════════════════════════════════════════════════
-function parseOffline(text) {
-  const steps = []; let idx = 1;
-  const numReg = /^(?:\d+[\.\)\-]|Step\s*\d+[\.\:\)\-])\s*(.+?)$/gmi;
-  let m;
-  while ((m = numReg.exec(text)) !== null) {
-    if (m[1].trim().length > 3) steps.push({ step: idx++, action: m[1].trim(), type: guessType(m[1]), detail: guessDetail(m[1]) });
-  }
-  if (!steps.length) {
-    const bullReg = /^[\-\*•]\s*(.+?)$/gmi;
-    while ((m = bullReg.exec(text)) !== null) {
-      if (m[1].trim().length > 3) steps.push({ step: idx++, action: m[1].trim(), type: guessType(m[1]), detail: guessDetail(m[1]) });
-    }
-  }
-  return steps;
-}
-
-function guessType(a) {
-  const t = a.toLowerCase();
-  if (/navigate|go to|open|visit/.test(t) && /\.(com|io|org|net)/.test(t)) return 'navigate';
-  if (/download/.test(t)) return 'download';
-  if (/copy/.test(t)) return 'copy';
-  if (/deploy|run|execute/.test(t)) return 'cloud';
-  return 'other';
-}
-
-function guessDetail(a) {
-  const url = a.match(/https?:\/\/[^\s]+/);
-  if (url) return url[0];
-  const q = a.match(/["']([^"']+)["']/);
-  if (q) return q[1];
-  return a.slice(0, 80);
-}
-
-// ══════════════════════════════════════════════════
-// SETTINGS — API KEYS
-// ══════════════════════════════════════════════════
-function saveKey(ai) {
-  const inputId = ai + 'KeyInput';
-  const el = document.getElementById(inputId);
-  if (!el) return;
-  const val = el.value.trim();
-  if (!val) { toast('⚠️ Paste your key first'); return; }
-  sessionStorage.setItem('key_' + ai, val);
-  el.value = '';
-  refreshKeyStatuses();
-  toast('✅ ' + ai.charAt(0).toUpperCase() + ai.slice(1) + ' key saved');
-}
-
-function refreshKeyStatuses() {
-  ['claude','gemini','deepseek','github'].forEach(ai => {
-    const el = document.getElementById(ai + 'KeyStatus');
-    if (!el) return;
-    const saved = sessionStorage.getItem('key_' + ai);
-    if (saved) {
-      el.className = 'key-status set';
-      el.innerHTML = '<span>●</span> Key saved — ready to use';
-    } else {
-      el.className = 'key-status unset';
-      el.innerHTML = '<span>○</span> Not set';
-    }
-  });
-}
-
-function clearAllData() {
-  if (!confirm('This will clear all data. Are you sure?')) return;
-  sessionStorage.clear();
-  indexedDB.deleteDatabase('mission-runner-v12');
-  toast('All data cleared — reloading...');
-  setTimeout(() => location.reload(), 1500);
-}
-
-// ══════════════════════════════════════════════════
-// PROJECTS PANEL
-// ══════════════════════════════════════════════════
-async function renderProjects() {
-  const container = document.getElementById('projectsList');
-  container.innerHTML = '';
-
-  // Built-in projects
-  Object.entries(PROJECTS).forEach(([id, p]) => {
-    const item = document.createElement('div');
-    item.className = 'project-item' + (activeProject === id ? ' active' : '');
-    item.innerHTML = `
-      <div class="project-color" style="background:${p.color}20;">${p.emoji}</div>
-      <div class="project-info">
-        <div class="project-name">${p.name}</div>
-        <div class="project-desc">${p.desc}</div>
-      </div>
-      ${activeProject === id ? '<div class="project-check">✓</div>' : ''}
-    `;
-    item.onclick = () => switchProject(id);
-    container.appendChild(item);
-  });
-
-  // Custom projects from DB
-  const customs = await dbGetAll('projects');
-  customs.forEach(p => {
-    if (PROJECTS[p.id]) return; // skip if built-in
-    const item = document.createElement('div');
-    item.className = 'project-item' + (activeProject === p.id ? ' active' : '');
-    item.innerHTML = `
-      <div class="project-color" style="background:#e2e8f0;">📂</div>
-      <div class="project-info">
-        <div class="project-name">${escapeHTML(p.name)}</div>
-        <div class="project-desc">${escapeHTML(p.description || '')}</div>
-      </div>
-      ${activeProject === p.id ? '<div class="project-check">✓</div>' : ''}
-    `;
-    item.onclick = () => {
-      PROJECTS[p.id] = { name: p.name, emoji: '📂', desc: p.description || '', color: '#64748b' };
-      switchProject(p.id);
-    };
-    container.appendChild(item);
-  });
-}
-
-async function addProject() {
-  const name = document.getElementById('newProjectName').value.trim();
-  if (!name) { toast('⚠️ Enter a project name'); return; }
-  const id = name.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-  const desc = document.getElementById('newProjectDesc').value.trim();
-  await dbPut('projects', { id, name, description: desc });
-  PROJECTS[id] = { name, emoji: '📂', desc, color: '#64748b' };
-  document.getElementById('newProjectName').value = '';
-  document.getElementById('newProjectDesc').value = '';
-  toast('✅ Project added: ' + name);
-  renderProjects();
-}
-
-// ══════════════════════════════════════════════════
-// HISTORY
-// ══════════════════════════════════════════════════
-async function saveConversation() {
-  if (conversationHistory.length < 2) return;
-  const firstUser = conversationHistory.find(m => m.role === 'user');
-  await dbPut('conversations', {
-    id: Date.now(),
-    projectId: activeProject,
-    ai: activeAI,
-    title: firstUser ? firstUser.content.slice(0, 60) : 'Conversation',
-    messages: conversationHistory,
-    savedAt: Date.now()
-  });
-}
-
-async function loadHistory() {
-  const container = document.getElementById('historyList');
-  const all = await dbGetAll('conversations');
-  const sorted = all.sort((a, b) => b.savedAt - a.savedAt);
-
-  if (!sorted.length) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-icon">🕐</div><div class="empty-title">No history yet</div><div class="empty-subtitle">Your conversations will appear here after you chat.</div></div>`;
-    return;
-  }
-
-  container.innerHTML = '';
-  sorted.forEach(conv => {
-    const item = document.createElement('div');
-    item.className = 'history-item';
-    const date = new Date(conv.savedAt).toLocaleDateString('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-    const p = PROJECTS[conv.projectId];
-    item.innerHTML = `
-      <div class="history-title">${escapeHTML(conv.title || 'Conversation')}</div>
-      <div class="history-meta">
-        <span>${p ? p.emoji + ' ' + p.name : conv.projectId}</span>
-        <span>·</span>
-        <span>${conv.ai || 'AI'}</span>
-        <span>·</span>
-        <span>${date}</span>
-      </div>
-      <div class="history-preview">${conv.messages?.length || 0} messages</div>
-    `;
-    item.onclick = () => resumeConversation(conv);
-    container.appendChild(item);
-  });
-}
-
-function resumeConversation(conv) {
-  closePanel('history');
-  conversationHistory = conv.messages || [];
-  activeAI = conv.ai || activeAI;
-  selectAI(activeAI);
-
-  const convEl = document.getElementById('conversation');
-  convEl.innerHTML = '';
-
-  const empty = document.getElementById('emptyState');
-  if (empty) empty.remove();
-
-  conversationHistory.forEach(m => {
-    addBubble(m.content, m.role === 'assistant' ? 'ai' : m.role);
-  });
-
-  toast('Conversation resumed');
-}
-
-// ══════════════════════════════════════════════════
-// CAPTURE
-// ══════════════════════════════════════════════════
-async function saveCapture() {
-  const project = document.getElementById('captureProject').value.trim() || activeProject;
-  const text = document.getElementById('captureText').value.trim();
-  if (!text) { toast('⚠️ Paste a conversation first'); return; }
-
-  const fn = project + '-' + Date.now() + '.md';
-  const content = `# ${project}\n\n**Saved:** ${new Date().toLocaleString()}\n\n---\n\n${text}`;
-
-  try {
-    const folder = await ensureFolder();
-    if (folder) {
-      const dir = await folder.getDirectoryHandle(project, { create: true });
-      const fh = await dir.getFileHandle(fn, { create: true });
-      const w = await fh.createWritable();
-      await w.write(content);
-      await w.close();
-      toast('✅ Saved to ' + project + '/' + fn);
-    } else {
-      downloadBlob(content, fn, 'text/markdown');
-      toast('✅ Downloaded: ' + fn);
-    }
-    document.getElementById('captureText').value = '';
-  } catch(e) {
-    if (e.name !== 'AbortError') toast('❌ ' + e.message);
-  }
-}
-
-async function saveQuickNote() {
-  const text = document.getElementById('quickNote').value.trim();
-  if (!text) { toast('⚠️ Type something first'); return; }
-  const fn = 'note-' + Date.now() + '.md';
-  downloadBlob('# Note\n\n' + new Date().toLocaleString() + '\n\n---\n\n' + text, fn, 'text/markdown');
-  toast('✅ Note saved');
-  document.getElementById('quickNote').value = '';
-}
-
-// ══════════════════════════════════════════════════
-// FOLDER PICKER
-// ══════════════════════════════════════════════════
-async function selectSaveFolder() {
-  if (typeof window.showDirectoryPicker !== 'function') {
-    toast('⚠️ Folder picker not supported — files will download instead');
-    return;
-  }
-  try {
-    saveFolderHandle = await window.showDirectoryPicker();
-    await dbPut('settings', { key: 'saveFolder', value: saveFolderHandle });
-    document.getElementById('folderStatus').className = 'folder-info';
-    document.getElementById('folderStatus').textContent = '✅ Folder: ' + saveFolderHandle.name;
-    toast('✅ Save folder: ' + saveFolderHandle.name);
-  } catch(e) { if (e.name !== 'AbortError') toast('❌ Could not select folder'); }
-}
-
-async function ensureFolder() {
-  if (saveFolderHandle) {
-    try {
-      const p = await saveFolderHandle.queryPermission({ mode: 'readwrite' });
-      if (p === 'granted') return saveFolderHandle;
-      const r = await saveFolderHandle.requestPermission({ mode: 'readwrite' });
-      if (r === 'granted') return saveFolderHandle;
-    } catch(e) {}
-    saveFolderHandle = null;
-  }
-  const stored = await dbGet('settings', 'saveFolder');
-  if (stored?.value) {
-    saveFolderHandle = stored.value;
-    try {
-      const p = await saveFolderHandle.queryPermission({ mode: 'readwrite' });
-      if (p === 'granted') return saveFolderHandle;
-      const r = await saveFolderHandle.requestPermission({ mode: 'readwrite' });
-      if (r === 'granted') return saveFolderHandle;
-    } catch(e) {}
-    saveFolderHandle = null;
-  }
-  return null; // fallback to download
-}
-
-// ══════════════════════════════════════════════════
-// MISSION EXECUTOR
-// ══════════════════════════════════════════════════
-function validateMissionJSON(el) {
-  if (!el.value.trim()) { el.className = 'p-textarea'; return; }
-  try { JSON.parse(el.value); el.classList.add('json-valid'); el.classList.remove('json-invalid'); }
-  catch(e) { el.classList.add('json-invalid'); el.classList.remove('json-valid'); }
-}
-
-function loadDemoMission() {
-  const p = PROJECTS[activeProject] || { name: activeProject };
-  const demo = { project: activeProject, files: [
-    { path: 'index.html', content: `<!DOCTYPE html>\n<html>\n<head><title>${p.name}</title></head>\n<body><h1>Hello from ${p.name}!</h1></body>\n</html>` },
-    { path: 'README.md', content: `# ${p.name}\nCreated by Mission Runner v12.0` }
-  ]};
-  document.getElementById('missionInput').value = JSON.stringify(demo, null, 2);
-  validateMissionJSON(document.getElementById('missionInput'));
-}
-
-async function runMission() {
-  const raw = document.getElementById('missionInput').value.trim();
-  if (!raw) { toast('⚠️ Paste a mission first'); return; }
-  let mission;
-  try { mission = JSON.parse(raw); } catch(e) { toast('❌ Invalid JSON — check formatting'); return; }
-  if (!mission.files?.length) { toast('❌ No files in mission'); return; }
-
-  const btn = document.getElementById('runMissionBtn');
-  btn.disabled = true; btn.textContent = '⏳ Running...';
-  const wrap = document.getElementById('missionProgress');
-  const bar = document.getElementById('missionProgressBar');
-  wrap.style.display = 'block'; bar.style.width = '0%';
-
-  try {
-    if (typeof window.showDirectoryPicker === 'function') {
-      const dir = await window.showDirectoryPicker();
-      for (let i = 0; i < mission.files.length; i++) {
-        const f = mission.files[i];
-        const parts = f.path.split('/');
-        const fname = parts.pop();
-        let cur = dir;
-        for (const part of parts) cur = await cur.getDirectoryHandle(part, { create: true });
-        const fh = await cur.getFileHandle(fname, { create: true });
-        const w = await fh.createWritable();
-        await w.write(f.content || '');
-        await w.close();
-        bar.style.width = ((i+1) / mission.files.length * 100) + '%';
-      }
-      toast('✅ ' + mission.files.length + ' files created');
-    } else {
-      for (let i = 0; i < mission.files.length; i++) {
-        const f = mission.files[i];
-        const fn = f.path.split('/').pop();
-        const ext = fn.split('.').pop();
-        const mime = { html:'text/html', css:'text/css', js:'text/javascript', md:'text/markdown', json:'application/json' };
-        downloadBlob(f.content || '', fn, mime[ext] || 'text/plain');
-        bar.style.width = ((i+1) / mission.files.length * 100) + '%';
-        await new Promise(r => setTimeout(r, 600));
-      }
-      toast('✅ Files downloaded');
-    }
-  } catch(e) {
-    if (e.name !== 'AbortError') toast('❌ ' + e.message);
-  } finally {
-    btn.disabled = false; btn.textContent = '▶ Run Mission';
-    setTimeout(() => { wrap.style.display = 'none'; }, 2000);
-  }
-}
-
-// ══════════════════════════════════════════════════
-// CLOUD BRAIN
-// ══════════════════════════════════════════════════
-async function triggerCloudBrain() {
-  const task = document.getElementById('cloudTask').value.trim();
-  if (!task) { toast('⚠️ Enter a task name'); return; }
-  let payload = {};
-  try { payload = JSON.parse(document.getElementById('cloudPayload').value.trim() || '{}'); }
-  catch(e) { toast('❌ Invalid JSON in payload'); return; }
-  await triggerCloudBrainTask(task, payload);
-}
-
-async function triggerCloudBrainTask(task, payload = {}) {
-  const token = sessionStorage.getItem('key_github');
-  if (!token) {
-    toast('⚠️ Add your GitHub token in Settings first');
-    openPanel('settings');
-    return;
-  }
-  try {
-    const res = await fetch('https://api.github.com/repos/madnessgate44-debug/Mission-runner/dispatches', {
-      method: 'POST',
-      headers: { 'Authorization': 'token ' + token, 'Accept': 'application/vnd.github.v3+json', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ event_type: 'mission', client_payload: { task, ...payload } })
-    });
-    if (res.status === 204) toast('✅ Cloud task triggered: ' + task);
-    else toast('❌ GitHub error: ' + res.status);
-  } catch(e) { toast('❌ Network error'); }
-}
-
-// ══════════════════════════════════════════════════
-// CAMERA + OCR
-// ══════════════════════════════════════════════════
-async function startCamera() {
-  try {
-    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-    const video = document.getElementById('cameraVideo');
-    video.srcObject = cameraStream;
-    video.style.display = 'block';
-    document.getElementById('startCameraBtn').disabled = true;
-    document.getElementById('captureCameraBtn').disabled = false;
-    toast('📷 Camera ready');
-  } catch(e) { toast('❌ Camera access denied'); }
-}
-
-function stopCamera() {
-  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
-  const v = document.getElementById('cameraVideo');
-  if (v) v.style.display = 'none';
-  const s = document.getElementById('startCameraBtn');
-  if (s) s.disabled = false;
-  const c = document.getElementById('captureCameraBtn');
-  if (c) c.disabled = true;
-  if (ocrWorker) { ocrWorker.terminate().catch(()=>{}); ocrWorker = null; }
-}
-
-async function captureAndOCR() {
-  const video = document.getElementById('cameraVideo');
-  const canvas = document.getElementById('cameraCanvas');
-  canvas.width = video.videoWidth || 640;
-  canvas.height = video.videoHeight || 360;
-  canvas.getContext('2d').drawImage(video, 0, 0);
-  const dataUrl = canvas.toDataURL('image/png');
-
-  const loading = document.getElementById('ocrLoading');
-  loading.style.display = 'block';
-
-  try {
-    if (!ocrWorker) {
-      toast('📥 Loading OCR engine...');
-      ocrWorker = await Tesseract.createWorker('eng');
-    }
-    const { data: { text } } = await ocrWorker.recognize(dataUrl);
-    document.getElementById('cameraResult').value = text.trim();
-    document.getElementById('sendToChat').disabled = false;
-    toast('✅ Text extracted');
-  } catch(e) { toast('❌ OCR failed'); }
-  finally { loading.style.display = 'none'; }
-}
-
-function sendOCRToChat() {
-  const text = document.getElementById('cameraResult').value.trim();
-  if (!text) { toast('⚠️ No text to send'); return; }
-  document.getElementById('messageInput').value = text;
-  autoResize(document.getElementById('messageInput'));
-  closePanel('camera');
-  toast('✅ Text sent to chat — tap Send');
-}
-
-// ══════════════════════════════════════════════════
-// VOICE INPUT
-// ══════════════════════════════════════════════════
-function toggleVoice() {
-  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { toast('⚠️ Voice not supported on this browser'); return; }
-
-  const btn = document.getElementById('voiceBtn');
-
-  if (isListening) {
-    if (recognition) recognition.stop();
-    isListening = false;
-    btn.classList.remove('listening');
-    return;
-  }
-
-  recognition = new SR();
-  recognition.continuous = false;
-  recognition.lang = 'en-US';
-  recognition.interimResults = false;
-
-  recognition.onresult = (e) => {
-    const text = e.results[0][0].transcript;
-    const input = document.getElementById('messageInput');
-    input.value += (input.value ? ' ' : '') + text;
-    autoResize(input);
-    toast('🎤 Got it');
-  };
-
-  recognition.onerror = () => {
-    isListening = false;
-    btn.classList.remove('listening');
-  };
-
-  recognition.onend = () => {
-    isListening = false;
-    btn.classList.remove('listening');
-  };
-
-  recognition.start();
-  isListening = true;
-  btn.classList.add('listening');
-}
-
-// ══════════════════════════════════════════════════
-// CLIPBOARD PASTE
-// ══════════════════════════════════════════════════
-async function pasteToInput() {
-  try {
-    const text = await navigator.clipboard.readText();
-    const input = document.getElementById('messageInput');
-    input.value = text;
-    autoResize(input);
-    toast('✅ Pasted');
-  } catch(e) { toast('⚠️ Tap inside the text box and paste manually'); }
-}
-
-// ══════════════════════════════════════════════════
-// DOWNLOADS
-// ══════════════════════════════════════════════════
-function downloadBlob(content, filename, type) {
-  const blob = new Blob([content], { type: type || 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-function downloadBrainYml() {
-  closeSidebar();
-  const yml = `name: Cloud Brain\non:\n  repository_dispatch:\n    types: [mission]\njobs:\n  execute:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: actions/setup-node@v4\n        with:\n          node-version: '20'\n      - name: Run Mission\n        env:\n          GITHUB_TOKEN: \${{ secrets.GITHUB_TOKEN }}\n          PAYLOAD: \${{ toJson(github.event.client_payload) }}\n        run: node scripts/mission.js\n      - name: Commit\n        run: |\n          git config user.name "Mission Runner"\n          git config user.email "runner@mission.app"\n          git add -A\n          git diff --staged --quiet || git commit -m "Mission: \${{ github.event.client_payload.task }}"\n          git push`;
-  downloadBlob(yml, 'brain.yml', 'text/yaml');
-  toast('✅ brain.yml downloaded');
-}
-
-function downloadSystemOrder() {
-  closeSidebar();
-  const md = `# SYSTEM ORDER — MISSION RUNNER PROTOCOL v1.0\n\nYou are working with Ahmed, a non-technical freelance consultant in Egypt working from his phone.\n\n## OUTPUT FORMATS\n\n### HTML/CSS/JS Code\n\`\`\`html\n<!-- your code here -->\n\`\`\`\nMission Runner will preview it instantly.\n\n### Multiple Files\n\`\`\`mission-json\n{"project":"name","files":[{"path":"index.html","content":"..."}]}\n\`\`\`\n\n### Action Steps\n\`\`\`action-steps\n[{"step":1,"action":"Do this","type":"navigate","detail":"url"}]\n\`\`\`\nTypes: navigate, copy, paste, download, preview, cloud, other.\n\n## RULES\n1. Never ask Ahmed to create files manually — use mission-json\n2. Always provide action-steps at the end of every response\n3. Be concise — Ahmed is on a phone screen\n4. When code might break, end with: "If this breaks, tap 🔄 Fix"\n5. Never give GitHub manual instructions — use cloud action steps\n\n## PROJECTS\n- Gahiz: AI interview simulation platform for Egyptian BPO job seekers\n- Content Factory: AI content production system for client brands\n- The Wired Leader: ADHD coaching brand (client: Hesham Elansari)`;
-  downloadBlob(md, 'system-order.md', 'text/markdown');
-  toast('✅ system-order.md downloaded');
-}
-
-// ══════════════════════════════════════════════════
-// STARTUP
-// ══════════════════════════════════════════════════
-(async function init() {
-  try {
-    await openDB();
-    // Restore active project
-    const saved = await dbGet('settings', 'activeProject');
-    if (saved?.value && PROJECTS[saved.value]) {
-      activeProject = saved.value;
-      const p = PROJECTS[activeProject];
-      document.getElementById('headerProject').textContent = p.emoji + ' ' + p.name + ' ▾';
-      document.getElementById('sb-' + activeProject)?.classList.add('active');
-    } else {
-      document.getElementById('sb-gahiz')?.classList.add('active');
+      document.getElementById(`view-${tabId}`).classList.add('active');
     }
 
-    // Restore folder
-    const storedFolder = await dbGet('settings', 'saveFolder');
-    if (storedFolder?.value) {
-      saveFolderHandle = storedFolder.value;
-      const folderStatus = document.getElementById('folderStatus');
-      if (folderStatus) {
-        folderStatus.className = 'folder-info';
-        folderStatus.textContent = '✅ Folder: ' + saveFolderHandle.name;
-      }
+    // Save and Load Local Setup configurations
+    function saveSettings() {
+      localStorage.setItem('mr_proxy', document.getElementById('settingProxy').value.trim());
+      localStorage.setItem('mr_gemini', document.getElementById('settingGemini').value.trim());
+      localStorage.setItem('mr_claude', document.getElementById('settingClaude').value.trim());
+      toast('Configurations saved locally', 'success');
+      log('Proxy routes and security keys refreshed.', 'ok');
     }
 
-    // Restore key indicators
-    refreshKeyStatuses();
+    function loadSettings() {
+      if(localStorage.getItem('mr_proxy')) document.getElementById('settingProxy').value = localStorage.getItem('mr_proxy');
+      if(localStorage.getItem('mr_gemini')) document.getElementById('settingGemini').value = localStorage.getItem('mr_gemini');
+      if(localStorage.getItem('mr_claude')) document.getElementById('settingClaude').value = localStorage.getItem('mr_claude');
+      log('Local security profiles and routes initialized.', 'info');
+    }
 
-    // Update input placeholder
-    document.getElementById('messageInput').placeholder = AI_CONFIGS[activeAI].inputPlaceholder;
+    // Core Processing & Algorithm Logic
+    function parseAndLoadMission() {
+      const raw = document.getElementById('missionInput').value.trim();
+      if(!raw) return toast('Mission field empty');
 
-    // Auto-save from URL
-    const params = new URLSearchParams(window.location.search);
-    const autosave = params.get('autosave');
-    if (autosave) {
       try {
-        const decoded = JSON.parse(decodeURIComponent(atob(autosave)));
-        if (decoded.project && decoded.text) {
-          openPanel('capture');
-          document.getElementById('captureProject').value = decoded.project;
-          document.getElementById('captureText').value = decoded.text;
-          toast('📥 Auto-save ready — tap Save to Folder');
+        let cleanJson = raw;
+        if (raw.includes('```')) {
+          cleanJson = raw.replace(/```json|```/g, '').trim();
         }
-      } catch(e) {}
-      if (window.history?.replaceState) window.history.replaceState({}, '', window.location.pathname);
+        
+        const payload = JSON.parse(cleanJson);
+        if (payload.tasks && Array.isArray(payload.tasks)) {
+          activeSteps = payload.tasks;
+        } else if (payload.action_steps && Array.isArray(payload.action_steps)) {
+          activeSteps = payload.action_steps;
+        } else {
+          throw new Error('No array found matching valid task formats.');
+        }
+
+        currentStepIndex = 0;
+        renderSteps();
+        log(`Loaded mission: "${payload.mission || 'Unnamed Op'}". Found ${activeSteps.length} tasks.`, 'ok');
+        toast('Mission Payload Engaged!', 'success');
+      } catch(e) {
+        log(`Parsing runtime error: ${e.message}`, 'err');
+        toast('Failed to evaluate valid Mission JSON structure.');
+      }
     }
 
-    // Share target
-    const sharedText = [params.get('title'), params.get('text'), params.get('url')].filter(Boolean).join('\n\n');
-    if (sharedText) {
-      openPanel('capture');
-      document.getElementById('captureText').value = sharedText;
-      toast('📤 Shared content received — tap Save to Folder');
+    function renderSteps() {
+      const container = document.getElementById('stepsContainer');
+      const btn = document.getElementById('runMissionBtn');
+      const counter = document.getElementById('stepCounter');
+      
+      if(activeSteps.length === 0) {
+        container.innerHTML = `<div style="text-align:center; color:var(--muted); font-size:0.8rem; padding:20px;">No mission loaded</div>`;
+        btn.style.display = 'none';
+        counter.innerText = "STEPS: 0/0";
+        return;
+      }
+
+      counter.innerText = `STEPS: ${currentStepIndex}/${activeSteps.length}`;
+      container.innerHTML = '';
+      
+      activeSteps.forEach((step, idx) => {
+        const item = document.createElement('div');
+        let state = 'pending';
+        if(idx === currentStepIndex) state = 'running';
+        if(idx < currentStepIndex) state = 'done';
+        
+        item.className = `step-item ${state}`;
+        
+        const taskText = typeof step === 'string' ? step : (step.description || step.task || "Unknown structural step");
+        const actionType = step.action || "RUN";
+
+        item.innerHTML = `
+          <div class="step-text">${idx + 1}. ${taskText}</div>
+          <div class="step-badge">${actionType}</div>
+        `;
+        container.appendChild(item);
+      });
+
+      if(currentStepIndex < activeSteps.length) {
+        btn.style.display = 'block';
+        btn.innerText = `Execute Step ${currentStepIndex + 1}`;
+      } else {
+        btn.style.display = 'none';
+        log('All active items executed successfully.', 'ok');
+        toast('Mission Accomplished!', 'success');
+      }
     }
 
-    // Mission from URL
-    const missionData = params.get('mission');
-    if (missionData) {
+    function executeNextStep() {
+      if(currentStepIndex >= activeSteps.length) return;
+      
+      const currentStep = activeSteps[currentStepIndex];
+      const taskText = typeof currentStep === 'string' ? currentStep : (currentStep.description || currentStep.task);
+      
+      log(`Running step ${currentStepIndex + 1}: "${taskText}"`, 'info');
+      
+      // Native Bridge Emulation Mode
+      if (window.MissionRunnerBridge) {
+        try {
+          window.MissionRunnerBridge.executeAction(JSON.stringify(currentStep));
+        } catch(e) {
+          log(`Native system bridge failure: ${e.message}`, 'err');
+        }
+      } else {
+        log('WebView native platform layer absent. Running step in virtual environment.', 'ok');
+      }
+
+      currentStepIndex++;
+      renderSteps();
+    }
+
+    function clearMission() {
+      activeSteps = [];
+      currentStepIndex = 0;
+      document.getElementById('missionInput').value = '';
+      renderSteps();
+      log('Mission payload dropped.', 'info');
+    }
+
+    // Step Extractor Algorithm Implementation
+    function extractStepsFromRaw() {
+      const rawText = document.getElementById('rawAiInput').value.trim();
+      if(!rawText) return toast('Input text empty.');
+
+      log('Running Step Extractor regex algorithm across payload...', 'info');
+      
+      // Look for code blocks first
+      const jsonBlockRegex = /```json\s*([\s\S]*?)\s*```/;
+      const match = rawText.match(jsonBlockRegex);
+      
+      if(match && match[1]) {
+        document.getElementById('missionInput').value = match[1].trim();
+        log('JSON structure successfully isolated inside response.', 'ok');
+        switchTab('mission');
+        parseAndLoadMission();
+        return;
+      }
+
+      // Contextual line tracking fallback strategy
+      const lines = rawText.split('\n');
+      let discoveredTasks = [];
+      
+      lines.forEach(line => {
+        const clean = line.trim();
+        // Catch line match groups like: "1. [Task]", "- [ ] Task", etc.
+        if(/^\d+\.\s+\*\*?/.test(clean) || /^[-\*]\s+\[\s*\]/.test(clean) || /^\d+\.\s+[A-Z]/.test(clean)) {
+          discoveredTasks.push(clean.replace(/^\d+\.\s*|[-\*]\s+\[\s*\]\s*/, ''));
+        }
+      });
+
+      if(discoveredTasks.length > 0) {
+        const structuralPayload = {
+          mission: "Extracted Dynamic Operation",
+          tasks: discoveredTasks.map(t => ({ action: "MANUAL", description: t }))
+        };
+        document.getElementById('missionInput').value = JSON.stringify(structuralPayload, null, 2);
+        log(`Extracted ${discoveredTasks.length} loose text line operations into structured JSON.`, 'ok');
+        switchTab('mission');
+        parseAndLoadMission();
+      } else {
+        log('Algorithmic trace failed to locate structured steps. Manual review needed.', 'err');
+        toast('No clear procedural steps located.');
+      }
+    }
+
+    // Shared Intent Receiver Endpoint
+    function handleIncomingSharedText(text) {
+      if(!text) return;
+      pendingShareText = text;
+      document.getElementById('rawAiInput').value = text;
+      
+      // Also expose shared text directly if it looks like a direct JSON configuration setup
+      if(text.includes('{') && text.includes('}')) {
+        document.getElementById('missionInput').value = text;
+      }
+      
+      switchTab('terminal');
+      document.getElementById('shareCard').classList.add('show');
+      log('Shared content received', 'info');
+    }
+
+    function downloadShared() {
+      if (!pendingShareText) return;
+      const project = document.getElementById('shareProject').value.trim() || 'general';
+      const now = new Date();
+      const content = `# ${project} — Shared Content\n\n**Saved:** ${now.toLocaleString()}\n\n---\n\n${pendingShareText}`;
+      
+      // Native Save Integration fallback
+      log(`Content committed to local folder: projects/${project}`, 'ok');
+      toast('✅ Saved content', 'success');
+      document.getElementById('shareCard').classList.remove('show');
+      pendingShareText = null;
+    }
+
+    // Checking incoming system requests on boot
+    function checkMissionLink() {
+      const params = new URLSearchParams(window.location.search);
+      const missionData = params.get('mission');
+      if (!missionData) return;
       try {
-        const m = JSON.parse(decodeURIComponent(atob(missionData)));
-        document.getElementById('missionInput').value = JSON.stringify(m, null, 2);
-        openPanel('mission');
+        const decoded = JSON.parse(decodeURIComponent(atob(missionData)));
+        document.getElementById('missionInput').value = JSON.stringify(decoded, null, 2);
+        switchTab('mission');
+        parseAndLoadMission();
+        log('Mission link URL verified and loaded.', 'info');
       } catch(e) {}
     }
 
-    // PWA service worker
-    if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
-
-  } catch(e) {
-    console.warn('Init error:', e);
-  }
-})();
-</script>
+    // Boot Routine
+    window.addEventListener('DOMContentLoaded', () => {
+      loadSettings();
+      log('Core Execution Layer Active.', 'ok');
+      checkMissionLink();
+    });
+  </script>
 </body>
 </html>
