@@ -73,7 +73,6 @@ footer{text-align:center;padding:16px}
 
 <main>
 
-  <!-- Setup Card -->
   <div class="card" id="setupCard">
     <div class="card-title">Connect to GitHub</div>
     <div class="field">
@@ -89,14 +88,13 @@ footer{text-align:center;padding:16px}
     <div class="st" id="setupSt"></div>
   </div>
 
-  <!-- Tabs — hidden until connected -->
   <div class="tabs" id="tabBar" style="display:none">
     <button class="tab active" onclick="switchTab('pusher',this)">⬆ Push</button>
     <button class="tab" onclick="switchTab('ai',this)">🤖 AI Builder</button>
     <button class="tab" onclick="switchTab('report',this)">📊 Report</button>
   </div>
 
-  <!-- Push Panel (manual) -->
+  <!-- Push Panel -->
   <div class="panel active" id="panel-pusher">
     <div class="card">
       <div class="card-title">Push File to GitHub</div>
@@ -138,7 +136,6 @@ footer{text-align:center;padding:16px}
       <div class="field">
         <label>AI Provider</label>
         <select id="aiProvider">
-          <option value="openai">OpenAI (ChatGPT)</option>
           <option value="gemini">Google Gemini</option>
           <option value="claude">Anthropic Claude</option>
         </select>
@@ -149,10 +146,6 @@ footer{text-align:center;padding:16px}
       </div>
       <div class="collapsible-content" id="aiSettingsContent">
         <div class="field">
-          <label>OpenAI API Key</label>
-          <input type="password" id="openaiKey" placeholder="sk-...">
-        </div>
-        <div class="field">
           <label>Gemini API Key</label>
           <input type="password" id="geminiKey" placeholder="AIza...">
         </div>
@@ -161,7 +154,7 @@ footer{text-align:center;padding:16px}
           <input type="password" id="claudeKey" placeholder="sk-ant-...">
         </div>
         <button class="btn-ghost" style="width:100%;margin-bottom:8px" onclick="saveAIKeys()">💾 Save Keys</button>
-        <div class="hint">Keys are stored only in your browser (localStorage). Never shared.</div>
+        <div class="hint">Keys stored only in your browser. Never shared.</div>
       </div>
       <div class="row">
         <button class="btn-primary" style="flex:1" onclick="transformWithAI()" id="aiTransformBtn">✨ Transform & Push</button>
@@ -265,7 +258,7 @@ async function pushFile() {
     try {
       var existing = await ghFetch('/repos/'+GH_REPO+'/contents/'+fp);
       sha = existing.sha;
-    } catch(e) { /* new file */ }
+    } catch(e) {}
     setSt('pushSt','loading','Pushing to GitHub…');
     var body = {message:cm, content:btoa(unescape(encodeURIComponent(content)))};
     if (sha) body.sha = sha;
@@ -288,28 +281,23 @@ function clearPush() {
 }
 
 function saveAIKeys() {
-  var openai = document.getElementById('openaiKey').value.trim();
   var gemini = document.getElementById('geminiKey').value.trim();
   var claude = document.getElementById('claudeKey').value.trim();
-  if (openai) localStorage.setItem('meshmesh_openai', openai);
   if (gemini) localStorage.setItem('meshmesh_gemini', gemini);
   if (claude) localStorage.setItem('meshmesh_claude', claude);
   setSt('aiSt','success','AI keys saved.');
-  setTimeout(()=>hide('aiSt'), 2000);
+  setTimeout(function(){hide('aiSt');}, 2000);
 }
 
 function loadAIKeysIntoInputs() {
-  var o = localStorage.getItem('meshmesh_openai');
   var g = localStorage.getItem('meshmesh_gemini');
   var c = localStorage.getItem('meshmesh_claude');
-  if (o) document.getElementById('openaiKey').value = o;
   if (g) document.getElementById('geminiKey').value = g;
   if (c) document.getElementById('claudeKey').value = c;
 }
 
 function getCurrentAIKey() {
   var provider = document.getElementById('aiProvider').value;
-  if (provider === 'openai') return localStorage.getItem('meshmesh_openai');
   if (provider === 'gemini') return localStorage.getItem('meshmesh_gemini');
   if (provider === 'claude') return localStorage.getItem('meshmesh_claude');
   return null;
@@ -329,100 +317,68 @@ function clearAIFields() {
 async function transformWithAI() {
   var filePath = document.getElementById('aiFilePath').value.trim();
   var prompt = document.getElementById('aiPrompt').value.trim();
-  if (!filePath || !prompt) {
-    setSt('aiSt','error','Enter file path and prompt.');
-    return;
-  }
-
+  if (!filePath || !prompt) { setSt('aiSt','error','Enter file path and prompt.'); return; }
   var provider = document.getElementById('aiProvider').value;
   var apiKey = getCurrentAIKey();
-  if (!apiKey) {
-    setSt('aiSt','error','No API key for '+provider+'. Add it in AI Settings.');
-    return;
-  }
-
+  if (!apiKey) { setSt('aiSt','error','No API key for '+provider+'. Add it in AI Settings.'); return; }
   var btn = document.getElementById('aiTransformBtn');
   btn.disabled = true;
   setSt('aiSt','loading','Fetching current file...');
-
   try {
     var currentContent = '';
     var sha = null;
     try {
       var existing = await ghFetch('/repos/'+GH_REPO+'/contents/'+filePath);
-      currentContent = atob(existing.content);
+      currentContent = atob(existing.content.replace(/\n/g,''));
       sha = existing.sha;
     } catch(e) {}
-
     setSt('aiSt','loading','Calling '+provider+' AI...');
     var newContent = '';
-    if (provider === 'openai') {
-      newContent = await callOpenAI(apiKey, currentContent, prompt);
-    } else if (provider === 'gemini') {
+    if (provider === 'gemini') {
       newContent = await callGemini(apiKey, currentContent, prompt);
     } else if (provider === 'claude') {
       newContent = await callClaude(apiKey, currentContent, prompt);
     }
-
-    if (!newContent || newContent.length < 50) {
-      throw new Error('AI returned very short or empty response.');
-    }
-
+    if (!newContent || newContent.length < 50) throw new Error('AI returned empty response.');
     setSt('aiSt','loading','Pushing to GitHub...');
     var commitMsg = 'AI ('+provider+'): '+prompt.substring(0,60);
     var body = {message:commitMsg, content:btoa(unescape(encodeURIComponent(newContent)))};
     if (sha) body.sha = sha;
-    await ghFetch('/repos/'+GH_REPO+'/contents/'+filePath, {
+    await ghFetch('/repos/'+GH_REPO+'/contents/'+filePath,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify(body)
     });
-
-    setSt('aiSt','success','✅ Transformation complete! '+filePath+' updated.');
+    setSt('aiSt','success','✅ Done! '+filePath+' updated via '+provider+'.');
     document.getElementById('aiPrompt').value = '';
-  } catch (err) {
+  } catch(err) {
     setSt('aiSt','error','❌ '+err.message);
-  } finally {
-    btn.disabled = false;
   }
-}
-
-async function callOpenAI(apiKey, currentContent, prompt) {
-  const systemMsg = `You are an expert web developer. Update the provided HTML/CSS/JS file according to the user's request. Return ONLY the complete, updated file content. No explanations, no markdown wrappers (no \`\`\`html). Just the raw code.`;
-  const userMsg = `Current file content:\n\n${currentContent || '(File is empty/new)'}\n\nUser request: ${prompt}\n\nReturn the full updated file content.`;
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'gpt-4o-mini', messages: [{ role: 'system', content: systemMsg }, { role: 'user', content: userMsg }], temperature: 0.2, max_tokens: 4096 })
-  });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`OpenAI error: ${data.error?.message || 'Unknown'}`);
-  return data.choices[0].message.content;
+  btn.disabled = false;
 }
 
 async function callGemini(apiKey, currentContent, prompt) {
-  const fullPrompt = `You are an expert web developer. Update the provided HTML/CSS/JS file according to the user's request. Return ONLY the complete, updated file content. No explanations, no markdown wrappers. No extra text outside the code.\n\nCurrent file:\n${currentContent || '(empty)'}\n\nUser request: ${prompt}`;
-  // Fixed model name: gemini-1.5-pro (was gemini-1.5-flash which is deprecated)
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${apiKey}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 4096 } })
+  var fullPrompt = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No explanations, no markdown wrappers.\n\nCurrent file:\n'+(currentContent||'(empty)')+'\n\nRequest: '+prompt;
+  var res = await fetch('https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key='+apiKey, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contents:[{parts:[{text:fullPrompt}]}],generationConfig:{temperature:0.2,maxOutputTokens:8192}})
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`Gemini error: ${data.error?.message || 'Unknown'}`);
+  var data = await res.json();
+  if (!res.ok) throw new Error('Gemini error: '+(data.error&&data.error.message||'Unknown'));
   return data.candidates[0].content.parts[0].text;
 }
 
 async function callClaude(apiKey, currentContent, prompt) {
-  const systemMsg = `You are an expert web developer. Update the provided HTML/CSS/JS file according to the user's request. Return ONLY the complete, updated file content. No explanations, no markdown wrappers (no \`\`\`html). Just the raw code.`;
-  const userMsg = `Current file content:\n\n${currentContent || '(File is empty/new)'}\n\nUser request: ${prompt}\n\nReturn the full updated file content.`;
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'content-type': 'application/json' },
-    body: JSON.stringify({ model: 'claude-3-haiku-20240307', max_tokens: 4096, temperature: 0.2, system: systemMsg, messages: [{ role: 'user', content: userMsg }] })
+  var systemMsg = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No explanations, no markdown wrappers.';
+  var userMsg = 'Current file:\n\n'+(currentContent||'(empty)')+'\n\nRequest: '+prompt+'\n\nReturn the full updated file.';
+  var res = await fetch('https://api.anthropic.com/v1/messages', {
+    method:'POST',
+    headers:{'x-api-key':apiKey,'anthropic-version':'2023-06-01','content-type':'application/json','anthropic-dangerous-direct-browser-access':'true'},
+    body:JSON.stringify({model:'claude-sonnet-4-6',max_tokens:8000,system:systemMsg,messages:[{role:'user',content:userMsg}]})
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(`Claude error: ${data.error?.message || 'Unknown'}`);
+  var data = await res.json();
+  if (!res.ok) throw new Error('Claude error: '+(data.error&&data.error.message||'Unknown'));
   return data.content[0].text;
 }
 
