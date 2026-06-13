@@ -4,10 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meshmesh Portal</title>
-    <!-- Tailwind CSS -->
+    <title>Mission Runner Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Lucide Icons -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
         tailwind.config = {
@@ -28,640 +26,496 @@
         }
     </script>
     <style>
-        /* Custom scrollbar style for premium dark UI */
-        ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #111827;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #374151;
-            border-radius: 4px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #4b5563;
-        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #111827; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
     </style>
 </head>
 <body class="h-full bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden flex flex-col">
 
     <div id="app" class="flex h-full w-full relative">
-        <!-- Sidebar Navigation -->
         <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-slate-900 border-r border-slate-800 flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0">
-            <!-- Sidebar Header -->
             <div class="h-16 px-6 flex items-center justify-between border-b border-slate-800">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
-                        <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                        <i data-lucide="zap" class="w-5 h-5 text-white"></i>
                     </div>
-                    <span class="font-bold text-lg bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Meshmesh</span>
+                    <span class="font-bold text-lg bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Mission Runner</span>
                 </div>
                 <button onclick="toggleSidebar()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 md:hidden">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
 
-            <!-- Workspace Projects Menu -->
-            <div class="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+            <div class="flex-1 overflow-y-auto px-4 py-6 space-y-6">
                 <div>
-                    <h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">AI Engine Workspaces</h3>
-                    <nav class="space-y-1.5" id="project-list">
-                        <!-- Navigation items will be injected here dynamically -->
+                    <h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Active Workspace</h3>
+                    <nav class="space-y-1.5" id="project-list"></nav>
+                </div>
+
+                <div>
+                    <h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Navigation</h3>
+                    <nav class="space-y-1" id="tab-menu-list">
+                        <button onclick="switchTab('agent')" id="tab-btn-agent" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium border border-transparent text-sky-400 bg-sky-500/10 transition-all">
+                            <i data-lucide="bot" class="w-4 h-4"></i> <span>🤖 Agent Chat Studio</span>
+                        </button>
+                        <button onclick="switchTab('mission')" id="tab-btn-mission" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium border border-transparent text-slate-400 hover:bg-slate-800/50 transition-all">
+                            <i data-lucide="folder" class="w-4 h-4"></i> <span>📁 Mission Executor</span>
+                        </button>
+                        <button onclick="switchTab('capture')" id="tab-btn-capture" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium border border-transparent text-slate-400 hover:bg-slate-800/50 transition-all">
+                            <i data-lucide="save" class="w-4 h-4"></i> <span>💾 Context Capture</span>
+                        </button>
+                        <button onclick="switchTab('log')" id="tab-btn-log" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium border border-transparent text-slate-400 hover:bg-slate-800/50 transition-all">
+                            <i data-lucide="clipboard" class="w-4 h-4"></i> <span>📋 Cloud Logs & Keys</span>
+                        </button>
                     </nav>
                 </div>
 
-                <!-- Session Storage API Configurations -->
-                <div class="border-t border-slate-800/80 pt-6">
-                    <div class="flex items-center justify-between px-3 mb-4">
-                        <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inline Configuration</h3>
-                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-mono">Device-Only</span>
+                <div class="border-t border-slate-800/80 pt-4 space-y-4 px-3">
+                    <div>
+                        <label class="block text-[11px] text-slate-500 font-medium mb-1">Active AI Provider</label>
+                        <select id="api-provider" onchange="switchProvider(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none">
+                            <option value="gemini">Google Gemini</option>
+                            <option value="claude">Anthropic Claude</option>
+                        </select>
                     </div>
-                    <div class="space-y-4 px-3">
+
+                    <div id="gemini-options" class="space-y-3">
                         <div>
-                            <label class="block text-xs text-slate-400 mb-1.5 font-medium">Active API Provider</label>
-                            <select id="api-provider" onchange="switchProvider(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500">
-                                <option value="gemini">Google Gemini (Flash 2.5)</option>
-                                <option value="claude">Anthropic Claude</option>
+                            <label class="block text-[11px] text-slate-500 font-medium mb-1">Gemini Model</label>
+                            <select id="gemini-model" onchange="saveModel('gemini', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none">
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                             </select>
                         </div>
-                        
-                        <div id="gemini-key-container" class="space-y-1.5">
-                            <label class="flex justify-between items-center text-xs text-slate-400 font-medium">
-                                <span>Gemini API Key</span>
-                                <a href="https://aistudio.google.com/" target="_blank" class="text-[10px] text-sky-400 hover:underline flex items-center gap-1">Get Key <i data-lucide="external-link" class="w-2.5 h-2.5"></i></a>
-                            </label>
-                            <div class="relative">
-                                <input type="password" id="gemini-key-input" placeholder="AIzaSy..." oninput="saveKey('gemini', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-10 py-2 text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500">
-                                <button onclick="toggleKeyVisibility('gemini-key-input')" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300">
-                                    <i data-lucide="eye" class="w-4 h-4"></i>
-                                </button>
-                            </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-500 font-medium mb-1">Gemini API Key</label>
+                            <input type="password" id="gemini-key-input" oninput="saveKey('gemini', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 focus:outline-none">
                         </div>
+                    </div>
 
-                        <div id="claude-key-container" class="space-y-1.5 hidden">
-                            <label class="flex justify-between items-center text-xs text-slate-400 font-medium">
-                                <span>Claude API Key</span>
-                                <a href="https://console.anthropic.com/" target="_blank" class="text-[10px] text-sky-400 hover:underline flex items-center gap-1">Get Key <i data-lucide="external-link" class="w-2.5 h-2.5"></i></a>
-                            </label>
-                            <div class="relative">
-                                <input type="password" id="claude-key-input" placeholder="sk-ant-..." oninput="saveKey('claude', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-10 py-2 text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500">
-                                <button onclick="toggleKeyVisibility('claude-key-input')" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300">
-                                    <i data-lucide="eye" class="w-4 h-4"></i>
-                                </button>
-                            </div>
+                    <div id="claude-options" class="space-y-3 hidden">
+                        <div>
+                            <label class="block text-[11px] text-slate-500 font-medium mb-1">Claude Model</label>
+                            <select id="claude-model" onchange="saveModel('claude', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none">
+                                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-500 font-medium mb-1">Claude API Key</label>
+                            <input type="password" id="claude-key-input" oninput="saveKey('claude', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs font-mono text-slate-200 focus:outline-none">
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Sidebar Footer Status -->
             <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex flex-col gap-2">
                 <div class="flex items-center gap-3 px-2">
-                    <div id="connection-indicator" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                    <span id="connection-status-text" class="text-xs text-slate-400 font-medium">Setup API Key to connect</span>
+                    <div id="connection-indicator" class="w-2 h-2 rounded-full bg-amber-500"></div>
+                    <span id="connection-status-text" class="text-[11px] text-slate-400 font-medium">Setup keys to begin</span>
                 </div>
-                <button onclick="clearAllData()" class="w-full py-1.5 px-3 rounded-lg text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/20">
-                    Clear Current Chat History
-                </button>
             </div>
         </aside>
 
-        <!-- Sidebar overlay for mobile view -->
         <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden md:hidden"></div>
 
-        <!-- Main Chat Area -->
         <main class="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
-            <!-- Header -->
-            <header class="h-16 px-4 md:px-6 flex items-center justify-between border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30">
+            <header class="h-16 px-6 flex items-center justify-between border-b border-slate-900 bg-slate-950/80 backdrop-blur-md">
                 <div class="flex items-center gap-3">
                     <button onclick="toggleSidebar()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 md:hidden">
                         <i data-lucide="menu" class="w-5 h-5"></i>
                     </button>
                     <div>
-                        <h2 id="current-project-title" class="font-semibold text-slate-100 flex items-center gap-2">
-                            <!-- Injected dynamically -->
-                        </h2>
-                        <p id="current-project-desc" class="text-[11px] text-slate-500 hidden sm:block">
-                            <!-- Injected dynamically -->
-                        </p>
+                        <h2 id="current-project-title" class="font-semibold text-slate-100 flex items-center gap-2 text-sm"></h2>
                     </div>
                 </div>
-                <div class="flex items-center gap-2">
-                    <button onclick="clearCurrentChat()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors" title="Clear chat window">
-                        <i data-lucide="trash-2" class="w-5 h-5"></i>
-                    </button>
-                </div>
+                <div class="text-xs bg-slate-900 border border-slate-800 rounded-lg px-3 py-1 font-mono text-slate-400" id="provider-badge">Gemini</div>
             </header>
 
-            <!-- Chat Message Window -->
-            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
-                <!-- Welcome UI or Chat conversation will live here -->
-            </div>
-
-            <!-- Chat Feedback Warning Block (Persistent but non-intrusive banner if key missing) -->
-            <div id="key-warning-banner" class="mx-4 md:mx-6 mb-2 hidden">
-                <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-200 text-xs">
-                    <div class="flex items-center gap-2">
-                        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0"></i>
-                        <span>No API Key configured. Please enter your provider key in the sidebar to send messages.</span>
-                    </div>
+            <div id="view-port" class="flex-1 overflow-y-auto p-6">
+                
+                <div id="view-agent" class="space-y-6 h-full flex flex-col">
+                    <div id="chat-messages" class="flex-1 overflow-y-auto space-y-4 pr-2"></div>
+                    <form id="chat-form" onsubmit="handleSendMessage(event)" class="bg-slate-900 border border-slate-800 rounded-xl p-2 flex items-center gap-2">
+                        <textarea id="message-input" rows="1" placeholder="Ask me to build or write something..." class="flex-1 bg-transparent border-0 outline-none text-sm text-slate-100 placeholder-slate-500 px-3 py-2 resize-none" onkeydown="handleKeyDown(event)"></textarea>
+                        <button type="submit" id="send-button" class="bg-sky-500 hover:bg-sky-600 text-white p-2 rounded-lg transition-all">
+                            <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                        </button>
+                    </form>
                 </div>
-            </div>
 
-            <!-- Input Form Box -->
-            <div class="p-4 md:p-6 bg-slate-950 border-t border-slate-900">
-                <div class="max-w-4xl mx-auto">
-                    <form id="chat-form" onsubmit="handleSendMessage(event)" class="relative bg-slate-900 border border-slate-800 rounded-2xl p-2 focus-within:ring-1 focus-within:ring-sky-500 focus-within:border-sky-500 transition-all shadow-xl">
-                        <textarea 
-                            id="message-input" 
-                            rows="1" 
-                            placeholder="Ask me anything..." 
-                            class="w-full bg-transparent border-0 resize-none outline-none focus:ring-0 text-slate-100 placeholder-slate-500 px-3 py-2 text-sm max-h-48 overflow-y-auto"
-                            onkeydown="handleKeyDown(event)"
-                        ></textarea>
-                        
-                        <div class="flex items-center justify-between pt-2 border-t border-slate-800/60 px-2 mt-1">
-                            <div class="flex items-center gap-1 text-slate-400">
-                                <span class="text-[11px] px-2 py-1 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono select-none" id="provider-badge">
-                                    Gemini 2.5
-                                </span>
-                            </div>
-                            <button type="submit" id="send-button" class="bg-sky-500 hover:bg-sky-600 text-white p-2 rounded-xl transition-all shadow-lg shadow-sky-500/10 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
-                                <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                <div id="view-mission" class="space-y-6 hidden">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-200">Mission Executor Automation</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Paste a system mission JSON manifest file payload to dispatch code assets directly into your connected cloud platform execution engine.</p>
+                        </div>
+                        <div>
+                            <textarea id="mission-json-input" rows="10" placeholder='{ "project": "gahiz-landing", "files": [] }' oninput="validateMissionJson(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-slate-700"></textarea>
+                            <div id="json-validation-status" class="text-[11px] mt-1.5 text-slate-500">Awaiting payload string entry...</div>
+                        </div>
+                        <div class="flex justify-end gap-3">
+                            <button onclick="loadDemoMission()" class="px-3 py-1.5 border border-slate-800 hover:border-slate-700 rounded-lg text-xs text-slate-400 transition-colors">Load Demo Site Payload</button>
+                            <button id="dispatch-cloud-btn" onclick="runMissionPayload()" disabled class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg shadow-lg shadow-emerald-600/10 transition-all flex items-center gap-2">
+                                <i data-lucide="cloud-lightning" class="w-3.5 h-3.5"></i> Dispatch Cloud Brain Mission
                             </button>
                         </div>
-                    </form>
-                    <p class="text-center text-[10px] text-slate-600 mt-2.5">
-                        Your keys are kept isolated inside your browser's private session.
-                    </p>
+                    </div>
                 </div>
+
+                <div id="view-capture" class="space-y-6 hidden">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-200">Manual Conversation Capture</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Quickly dump high-density chat archives into isolated project storage buffers manually.</p>
+                        </div>
+                        <textarea id="capture-buffer" rows="8" placeholder="Paste full chat logs here..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none"></textarea>
+                        <button onclick="saveManualCapture()" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold transition-colors">Export Context Buffer Log (.md)</button>
+                    </div>
+                </div>
+
+                <div id="view-log" class="space-y-6 hidden">
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-200">GitHub Cloud Brain Tokens</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Provide a high-clearance Personal Access Token (PAT) with `repo` scopes to permit remote dispatches.</p>
+                        </div>
+                        <div class="space-y-2">
+                            <label class="block text-xs font-mono text-slate-400">GitHub Access Token (PAT)</label>
+                            <input type="password" id="github-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" oninput="saveGitHubToken(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-700 focus:outline-none">
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
+                        <h3 class="text-sm font-bold text-slate-200">Activity & Execution Stream</h3>
+                        <div id="activity-log-box" class="h-48 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-slate-400 space-y-1"></div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
 
-    <!-- Core App Logic -->
     <script>
-        // Projects Schema definition
         const PROJECTS = {
-            general: {
-                id: 'general',
-                name: 'Meshmesh Assistant',
-                desc: 'General purpose workspace for conversational tasks.',
-                icon: 'bot',
-                systemPrompt: 'You are Meshmesh Assistant, a helpful and knowledgeable AI companion designed to provide direct, clear, and highly practical assistance.'
-            },
-            gahiz: {
-                id: 'gahiz',
-                name: 'Gahiz',
-                desc: 'Business strategy & e-commerce intelligence system.',
-                icon: 'briefcase',
-                systemPrompt: 'You are Gahiz (جاهز), a strategic business, product, and e-commerce consultant. Help the user build highly tailored strategies, formulate tactical expansion schemes, refine supply chains, and design market entrance matrices. Prioritize deep local and global commercial realities, offering concrete steps and data-driven insights. Communicate fluently in Arabic or English, aligned perfectly with the user\'s tone.'
-            },
-            content_factory: {
-                id: 'content_factory',
-                name: 'Content Factory',
-                desc: 'High-speed editorial strategy and marketing automation copywriting.',
-                icon: 'factory',
-                systemPrompt: 'You are Content Factory, an elite social copywriter, viral media designer, and persuasive editor. Your task is to turn thoughts into absolute high-performing posts (LinkedIn, Threads, Newsletter). Use frameworks like AIDA or PAS when appropriate. Write copy that captures reader attention inside the first 3 seconds. Focus on rhythm, structure, and emotional hooks.'
-            },
-            wired_leader: {
-                id: 'wired_leader',
-                name: 'Wired Leader',
-                desc: 'Executive speech coach and corporate correspondence architecture.',
-                icon: 'shield-alert',
-                systemPrompt: 'You are Wired Leader, an executive speech trainer, senior diplomat, and organizational psychologist. Your job is to advise leaders on high-stakes crisis management, design premium strategic communications, and edit corporate emails for absolute authority, tact, and maximum impact. Provide precise structural adjustments to verbal and written communications.'
-            }
+            general: { id: 'general', name: 'Mission Control', icon: 'zap', systemPrompt: 'You are an execution router assistant.' },
+            gahiz: { id: 'gahiz', name: 'Gahiz Platform (جاهز)', icon: 'briefcase', systemPrompt: 'You are Gahiz (جاهز), a product deployment coach. When asked to make a site, output a codeblock marked with language `mission-json` following this structural pattern:\n{\n  "project": "gahiz-landing",\n  "files": [\n    { "path": "index.html", "content": "HTML text..." }\n  ]\n}' },
+            content_factory: { id: 'content_factory', name: 'Content Factory', icon: 'factory', systemPrompt: 'You are Content Factory editorial assistant.' },
+            wired_leader: { id: 'wired_leader', name: 'Wired Leader', icon: 'shield-alert', systemPrompt: 'You are Wired Leader operations suite advisor.' }
         };
 
-        // State initialization
         let activeProject = 'general';
-        let conversations = JSON.parse(sessionStorage.getItem('meshmesh_chats')) || {};
-        let activeProvider = sessionStorage.getItem('meshmesh_provider') || 'gemini';
+        let activeTab = 'agent';
+        let conversations = JSON.parse(sessionStorage.getItem('mr_chats')) || {};
+        let activeProvider = sessionStorage.getItem('mr_provider') || 'gemini';
 
-        // Auto-initialize conversation arrays
-        Object.keys(PROJECTS).forEach(pKey => {
-            if (!conversations[pKey]) {
-                conversations[pKey] = [];
-            }
-        });
+        Object.keys(PROJECTS).forEach(k => { if (!conversations[k]) conversations[k] = []; });
 
-        // Toggle Key Input Type (Show/Hide Secret)
-        function toggleKeyVisibility(id) {
-            const input = document.getElementById(id);
-            if (input.type === 'password') {
-                input.type = 'text';
-            } else {
-                input.type = 'password';
-            }
+        function switchTab(tabId) {
+            document.querySelectorAll('#tab-menu-list button').forEach(b => {
+                b.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium border border-transparent text-slate-400 hover:bg-slate-800/50 transition-all";
+            });
+            const activeBtn = document.getElementById(`tab-btn-${tabId}`);
+            if (activeBtn) activeBtn.className = "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium border border-transparent text-sky-400 bg-sky-500/10 transition-all";
+
+            ['agent', 'mission', 'capture', 'log'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+            });
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            activeTab = tabId;
+            if(tabId === 'agent') renderChatHistory();
         }
 
-        // Toggle mobile sidebar
         function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('sidebar-overlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('hidden');
+            document.getElementById('sidebar').classList.toggle('-translate-x-full');
+            document.getElementById('sidebar-overlay').classList.toggle('hidden');
         }
 
-        // Initialize state indicators
-        function updateConnectionIndicator() {
-            const provider = document.getElementById('api-provider').value;
-            const key = sessionStorage.getItem(`meshmesh_key_${provider}`);
-            const indicator = document.getElementById('connection-indicator');
-            const statusText = document.getElementById('connection-status-text');
-            const warningBanner = document.getElementById('key-warning-banner');
-
-            if (key && key.trim().length > 0) {
-                indicator.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
-                statusText.innerText = `${provider.toUpperCase()} Key Active`;
-                warningBanner.classList.add('hidden');
-            } else {
-                indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
-                statusText.innerText = "Setup API Key to connect";
-                warningBanner.classList.remove('hidden');
-            }
+        function pushLog(message, status = 'info') {
+            const container = document.getElementById('activity-log-box');
+            if(!container) return;
+            const entry = document.createElement('div');
+            entry.className = status === 'error' ? 'text-red-400' : status === 'success' ? 'text-emerald-400' : 'text-slate-400';
+            entry.innerText = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
         }
 
-        // Switch Engine Provider
+        function saveGitHubToken(val) {
+            localStorage.setItem('mr_github_token', val.trim());
+            pushLog("GitHub authentication token stored securely inside client configuration matrix.", 'success');
+        }
+
         function switchProvider(provider) {
             activeProvider = provider;
-            sessionStorage.setItem('meshmesh_provider', provider);
-            
-            document.getElementById('gemini-key-container').classList.add('hidden');
-            document.getElementById('claude-key-container').classList.add('hidden');
-            
-            if (provider === 'gemini') {
-                document.getElementById('gemini-key-container').classList.remove('hidden');
-                document.getElementById('provider-badge').innerText = 'Gemini 2.5';
-            } else if (provider === 'claude') {
-                document.getElementById('claude-key-container').classList.remove('hidden');
-                document.getElementById('provider-badge').innerText = 'Claude 3.5';
-            }
-            updateConnectionIndicator();
+            sessionStorage.setItem('mr_provider', provider);
+            document.getElementById('gemini-options').classList.add('hidden');
+            document.getElementById('claude-options').classList.add('hidden');
+            document.getElementById(`${provider}-options`).classList.remove('hidden');
+            updateIndicators();
         }
 
-        // Save keys inside temporary sessionStorage sandbox
         function saveKey(provider, val) {
-            sessionStorage.setItem(`meshmesh_key_${provider}`, val.trim());
-            updateConnectionIndicator();
+            sessionStorage.setItem(`mr_key_${provider}`, val.trim());
+            updateIndicators();
         }
 
-        // Load keys back on startup
-        function loadSavedKeys() {
-            const geminiKey = sessionStorage.getItem('meshmesh_key_gemini') || '';
-            const claudeKey = sessionStorage.getItem('meshmesh_key_claude') || '';
+        function saveModel(provider, model) {
+            sessionStorage.setItem(`mr_model_${provider}`, model);
+            updateIndicators();
+        }
+
+        function updateIndicators() {
+            const key = sessionStorage.getItem(`mr_key_${activeProvider}`);
+            const badge = document.getElementById('provider-badge');
+            const model = sessionStorage.getItem(`mr_model_${activeProvider}`) || (activeProvider === 'gemini' ? 'gemini-2.5-flash' : 'claude-3-5-sonnet-20241022');
             
-            document.getElementById('gemini-key-input').value = geminiKey;
-            document.getElementById('claude-key-input').value = claudeKey;
-            document.getElementById('api-provider').value = activeProvider;
-            
-            switchProvider(activeProvider);
+            badge.innerText = model;
+            const ind = document.getElementById('connection-indicator');
+            const text = document.getElementById('connection-status-text');
+
+            if (key && key.length > 0) {
+                ind.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                text.innerText = `${activeProvider.toUpperCase()} Operational Matrix Active`;
+            } else {
+                ind.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+                text.innerText = "Awaiting Core API Encryption Keys";
+            }
         }
 
-        // Build Project Sidebar list
-        function renderProjectSidebar() {
-            const listContainer = document.getElementById('project-list');
-            listContainer.innerHTML = '';
-
-            Object.values(PROJECTS).forEach(p => {
-                const isActive = p.id === activeProject;
-                const activeClasses = isActive 
-                    ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' 
-                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent';
-
-                const btn = document.createElement('button');
-                btn.className = `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${activeClasses}`;
-                btn.onclick = () => selectProject(p.id);
-                btn.innerHTML = `
-                    <div class="p-1.5 rounded-lg ${isActive ? 'bg-sky-500/15 text-sky-400' : 'bg-slate-950 text-slate-500'}">
-                        <i data-lucide="${p.icon}" class="w-4 h-4"></i>
-                    </div>
-                    <div class="text-left flex-1 min-w-0">
-                        <p class="truncate font-semibold text-xs text-slate-200">${p.name}</p>
-                        <p class="truncate text-[10px] text-slate-500">${p.desc}</p>
-                    </div>
-                `;
-                listContainer.appendChild(btn);
-            });
-            lucide.createIcons();
+        function validateMissionJson(text) {
+            const status = document.getElementById('json-validation-status');
+            const btn = document.getElementById('dispatch-cloud-btn');
+            if(!text.trim()) {
+                status.className = "text-[11px] mt-1.5 text-slate-500";
+                status.innerText = "Awaiting payload string entry...";
+                btn.disabled = true;
+                return;
+            }
+            try {
+                const parsed = JSON.parse(text);
+                if(!parsed.project || !parsed.files) throw new Error("Missing parameters (`project` or `files` field arrays structurally unmapped).");
+                status.className = "text-[11px] mt-1.5 text-emerald-400 font-medium";
+                status.innerText = `✓ Valid Mission Manifest File Structure Target: ${parsed.project}`;
+                btn.disabled = false;
+            } catch(e) {
+                status.className = "text-[11px] mt-1.5 text-red-400 font-medium";
+                status.innerText = `✗ Manifest Invalid Matrix Structure: ${e.message}`;
+                btn.disabled = true;
+            }
         }
 
-        // Change workspace project
+        // TRIGGER CLOUD BRAIN IMPLEMENTATION PIPELINE
+        async function triggerCloudBrain(task, taskPayload) {
+            const GITHUB_TOKEN = localStorage.getItem('mr_github_token');
+            if (!GITHUB_TOKEN) {
+                alert('⚠️ Deployment Blocked: GitHub Core Personal Access Token missing inside System Logs panel settings.');
+                pushLog('Aborted task run: Token missing credential mappings.', 'error');
+                return;
+            }
+
+            pushLog(`Initiating dispatch request targeting task: ${task}...`, 'info');
+            try {
+                // Hits the remote repository_dispatch triggers sequence
+                const response = await fetch(
+                    'https://api.github.com/repos/madnessgate44-debug/Mission-runner/dispatches',
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `token ${GITHUB_TOKEN}`,
+                            'Accept': 'application/vnd.github.v3+json',
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            event_type: 'mission',
+                            client_payload: {
+                                task: task,
+                                ...taskPayload
+                            }
+                        })
+                    }
+                );
+
+                if (response.status === 204) {
+                    pushLog(`🚀 Cloud workflow event accepted! GitHub brain.yml is now executing.`, 'success');
+                    alert('✅ Core Mission Sent! GitHub Actions has verified your clearance and is spinning up a server environment to create your pages.');
+                } else {
+                    const errTxt = await response.text();
+                    pushLog(`GitHub API Engine Refusal HTTP:${response.status} - ${errTxt}`, 'error');
+                }
+            } catch(err) {
+                pushLog(`Network tracking exception fault: ${err.message}`, 'error');
+            }
+        }
+
+        function runMissionPayload() {
+            const jsonText = document.getElementById('mission-json-input').value;
+            try {
+                const parsed = JSON.parse(jsonText);
+                triggerCloudBrain('deploy_site', {
+                    target: `sites/${parsed.project}`,
+                    files: parsed.files
+                });
+            } catch(e) {
+                pushLog('Execution error extraction crash logic parsing failure.', 'error');
+            }
+        }
+
+        function loadDemoMission() {
+            const demo = {
+                project: "gahiz-landing",
+                files: [
+                    { path: "index.html", content: "<!DOCTYPE html><html><head><title>Gahiz Mock Platform</title></head><body style='background:#0f172a;color:#f8fafc;font-family:sans-serif;padding:3rem;'><h1 style='color:#38bdf8;'>Gahiz (جاهز)</h1><p>Automated cloud deployment tracking success.</p></body></html>" }
+                ]
+            };
+            const element = document.getElementById('mission-json-input');
+            element.value = JSON.stringify(demo, null, 2);
+            validateMissionJson(element.value);
+        }
+
         function selectProject(projectId) {
             activeProject = projectId;
-            const proj = PROJECTS[projectId];
+            const p = PROJECTS[projectId];
+            document.getElementById('current-project-title').innerHTML = `<i data-lucide="${p.icon}" class="w-4 h-4 text-sky-400"></i> <span>${p.name} Workspace Suite</span>`;
             
-            document.getElementById('current-project-title').innerHTML = `
-                <i data-lucide="${proj.icon}" class="w-5 h-5 text-sky-400"></i>
-                <span>${proj.name}</span>
-            `;
-            document.getElementById('current-project-desc').innerText = proj.desc;
-            
-            renderProjectSidebar();
-            renderChatHistory();
-            
-            // On mobile devices auto-close sidebar
-            if (window.innerWidth < 768) {
-                toggleSidebar();
-            }
+            // Re-render project lists to reflect selection active states
+            const container = document.getElementById('project-list');
+            container.innerHTML = '';
+            Object.values(PROJECTS).forEach(proj => {
+                const isSel = proj.id === activeProject;
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold border ${isSel ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' : 'text-slate-400 hover:bg-slate-800/50 border-transparent'}`;
+                btn.onclick = () => selectProject(proj.id);
+                btn.innerHTML = `<i data-lucide="${proj.icon}" class="w-3.5 h-3.5"></i> <span class="truncate">${proj.name}</span>`;
+                container.appendChild(btn);
+            });
+            lucide.createIcons();
+            if(activeTab === 'agent') renderChatHistory();
         }
 
-        // Print chat messages inside panel window
         function renderChatHistory() {
             const container = document.getElementById('chat-messages');
-            const messages = conversations[activeProject] || [];
+            const list = conversations[activeProject] || [];
+            container.innerHTML = '';
             
-            if (messages.length === 0) {
-                // Render gorgeous Empty State Greeting
-                const proj = PROJECTS[activeProject];
-                container.innerHTML = `
-                    <div class="h-full flex flex-col items-center justify-center max-w-xl mx-auto text-center py-12 px-4">
-                        <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 shadow-xl text-sky-400">
-                            <i data-lucide="${proj.icon}" class="w-8 h-8"></i>
-                        </div>
-                        <h3 class="text-xl font-bold text-slate-100 mb-2">Welcome to ${proj.name}</h3>
-                        <p class="text-sm text-slate-400 leading-relaxed">${proj.desc}</p>
-                        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-                            <button onclick="useQuickPrompt('Provide a breakdown of standard operational procedures for this module.')" class="text-left p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all text-xs text-slate-300">
-                                <p class="font-medium text-slate-200 mb-1">Get Started</p>
-                                <p class="text-slate-500">Provide a breakdown of standard procedures.</p>
-                            </button>
-                            <button onclick="useQuickPrompt('What are the key priorities to set up first when utilizing this assistant?')" class="text-left p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all text-xs text-slate-300">
-                                <p class="font-medium text-slate-200 mb-1">Key Priorities</p>
-                                <p class="text-slate-500">What are the essential priorities to focus on?</p>
-                            </button>
-                        </div>
+            if(list.length === 0) {
+                container.innerHTML = `<div class="text-xs text-slate-500 text-center py-12 font-mono">Channel stream unallocated. Initialize strategic prompt command sequence below.</div>`;
+                return;
+            }
+
+            list.forEach(m => {
+                const isUsr = m.role === 'user';
+                const div = document.createElement('div');
+                div.className = `flex ${isUsr ? 'justify-end' : 'justify-start'} w-full`;
+                
+                let rawText = m.text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                rawText = rawText.replace(/```([\s\S]*?)```/g, (match, matchCode) => {
+                    return `<pre class="bg-slate-950 border border-slate-800 rounded-lg p-3 my-2 text-[11px] font-mono text-slate-300 overflow-x-auto select-all">${matchCode.trim()}</pre>`;
+                });
+
+                div.innerHTML = `
+                    <div class="max-w-[85%] rounded-xl p-3.5 text-xs ${isUsr ? 'bg-sky-600 text-white' : 'bg-slate-900 border border-slate-800 text-slate-200'}">
+                        <div class="whitespace-pre-line leading-relaxed font-sans">${rawText}</div>
                     </div>
                 `;
-            } else {
-                container.innerHTML = '';
-                messages.forEach((msg, idx) => {
-                    const isUser = msg.role === 'user';
-                    const wrapper = document.createElement('div');
-                    wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} w-full`;
-                    
-                    const bubble = document.createElement('div');
-                    bubble.className = `max-w-[85%] sm:max-w-2xl rounded-2xl p-4 text-sm shadow-md transition-all ${
-                        isUser 
-                        ? 'bg-sky-600 text-white rounded-tr-none' 
-                        : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
-                    }`;
-
-                    // Transform simple markdown paragraphs/newlines for neat structure
-                    const formattedText = formatMessageContent(msg.text);
-                    bubble.innerHTML = `
-                        <div class="prose prose-invert prose-sm max-w-none text-[13px] sm:text-sm leading-relaxed whitespace-pre-line">
-                            ${formattedText}
-                        </div>
-                        <div class="text-[10px] mt-2 select-none ${isUser ? 'text-sky-200 text-right' : 'text-slate-500'}">
-                            ${msg.timestamp}
-                        </div>
-                    `;
-                    
-                    wrapper.appendChild(bubble);
-                    container.appendChild(wrapper);
-                });
-            }
-            container.scrollTop = container.scrollHeight;
-            lucide.createIcons();
-        }
-
-        // Quick prompt click injection
-        function useQuickPrompt(text) {
-            document.getElementById('message-input').value = text;
-            document.getElementById('message-input').focus();
-        }
-
-        // Simple Markdown formatter to render code blocks and line breaks cleanly
-        function formatMessageContent(text) {
-            // Escape html tags to avoid raw injection issues
-            let escaped = text
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;");
-
-            // Match code blocks ``` ... ```
-            const codeBlockRegex = /```([\s\S]*?)```/g;
-            escaped = escaped.replace(codeBlockRegex, (match, code) => {
-                return `<pre class="bg-slate-950 border border-slate-800 rounded-xl p-3 my-2 text-xs font-mono text-slate-300 overflow-x-auto select-all">${code.trim()}</pre>`;
+                container.appendChild(div);
             });
-
-            // Match inline code `...`
-            escaped = escaped.replace(/`([^`\n]+)`/g, '<code class="bg-slate-950 px-1.5 py-0.5 rounded text-xs font-mono text-sky-400">$1</code>');
-
-            return escaped;
+            container.scrollTop = container.scrollHeight;
         }
 
-        // Exponential backoff executor for secure API direct execution
-        async function fetchWithBackoff(url, options, maxRetries = 5) {
-            let delay = 1000;
-            for (let i = 0; i < maxRetries; i++) {
-                try {
-                    const response = await fetch(url, options);
-                    if (response.ok) {
-                        return response;
-                    }
-                    if (response.status !== 429 && response.status < 500) {
-                        // Return errors early (like authentication/key issues)
-                        return response;
-                    }
-                } catch (err) {
-                    if (i === maxRetries - 1) throw err;
-                }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2; // Exponential expansion
-            }
-            throw new Error("Failed after maximum exponential retries.");
-        }
-
-        // Direct Core API Calling Pipeline
         async function executeAiGeneration(userQuery, systemPrompt) {
             const provider = activeProvider;
-            const key = sessionStorage.getItem(`meshmesh_key_${provider}`);
-
-            if (!key || key.trim() === '') {
-                throw new Error("API Key is missing. Check your settings in the sidebar.");
-            }
+            const key = sessionStorage.getItem(`mr_key_${provider}`);
+            if (!key) throw new Error("Encryption workspace context error: System target API key parameter missing.");
 
             if (provider === 'gemini') {
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] }
-                };
-
-                const res = await fetchWithBackoff(url, {
+                const model = sessionStorage.getItem('mr_model_gemini') || 'gemini-2.5-flash';
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+                const res = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: userQuery }] }],
+                        systemInstruction: { parts: [{ text: systemPrompt }] }
+                    })
                 });
-
                 const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.error?.message || "Google API returned an error status.");
-                }
-
-                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!responseText) throw new Error("Empty response received from Gemini engine.");
-                return responseText;
-            } else if (provider === 'claude') {
-                // Client-side execution of Anthropic Claude. Note: Direct browser connection requires proper handling or bypass of CORS.
-                const url = 'https://api.anthropic.com/v1/messages';
-                const payload = {
-                    model: "claude-3-5-sonnet-20241022",
-                    max_tokens: 4000,
-                    system: systemPrompt,
-                    messages: [
-                        { role: "user", content: userQuery }
-                    ]
-                };
-
-                const res = await fetch(url, {
+                if (!res.ok) throw new Error(data.error?.message || "Google Cluster operational state failure.");
+                return data.candidates?.[0]?.content?.parts?.[0]?.text;
+            } else {
+                // Claude configuration mapping matrix logic
+                const model = sessionStorage.getItem('mr_model_claude') || 'claude-3-5-sonnet-20241022';
+                const res = await fetch('https://api.anthropic.com/v1/messages', {
                     method: 'POST',
                     headers: {
                         'x-api-key': key,
                         'anthropic-version': '2023-06-01',
                         'content-type': 'application/json',
-                        'anthropic-dangerous-direct-profiles-allowed': 'true' // Bypass built-in SDK console safeguards
+                        'anthropic-dangerous-direct-profiles-allowed': 'true'
                     },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify({ model: model, max_tokens: 4000, system: systemPrompt, messages: [{ role: "user", content: userQuery }] })
                 });
-
                 const data = await res.json();
-                if (!res.ok) {
-                    throw new Error(data.error?.message || "Anthropic API returned an error.");
-                }
-
-                const responseText = data.content?.[0]?.text;
-                if (!responseText) throw new Error("Empty response received from Claude engine.");
-                return responseText;
+                if (!res.ok) throw new Error(data.error?.message || "Anthropic cluster communication state exception.");
+                return data.content?.[0]?.text;
             }
         }
 
-        // Handle Send message event
-        async function handleSendMessage(event) {
-            if (event) event.preventDefault();
-            
-            const inputElement = document.getElementById('message-input');
-            const sendBtn = document.getElementById('send-button');
-            const query = inputElement.value.trim();
-            
-            if (!query) return;
+        async function handleSendMessage(e) {
+            if(e) e.preventDefault();
+            const input = document.getElementById('message-input');
+            const query = input.value.trim();
+            if(!query) return;
 
-            // Block execution if no key is entered
-            const providerKey = sessionStorage.getItem(`meshmesh_key_${activeProvider}`);
-            if (!providerKey) {
-                document.getElementById('key-warning-banner').classList.remove('hidden');
-                return;
-            }
-
-            // Lock Input Panel
-            inputElement.value = '';
-            inputElement.disabled = true;
-            sendBtn.disabled = true;
-
-            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-            // Push User Message
-            conversations[activeProject].push({
-                role: 'user',
-                text: query,
-                timestamp: timestamp
-            });
+            input.value = '';
+            conversations[activeProject].push({ role: 'user', text: query });
             renderChatHistory();
-
-            // Inject Custom Temporary Loading Response State
-            const container = document.getElementById('chat-messages');
-            const loadingWrapper = document.createElement('div');
-            loadingWrapper.id = 'meshmesh-loading-indicator';
-            loadingWrapper.className = 'flex justify-start w-full';
-            loadingWrapper.innerHTML = `
-                <div class="max-w-[85%] sm:max-w-2xl rounded-2xl p-4 bg-slate-900 border border-slate-800 text-slate-400 rounded-tl-none">
-                    <div class="flex items-center gap-2">
-                        <div class="flex space-x-1.5">
-                            <div class="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                            <div class="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                            <div class="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
-                        </div>
-                        <span class="text-xs text-slate-500 ml-1 font-mono">Meshmesh is processing...</span>
-                    </div>
-                </div>
-            `;
-            container.appendChild(loadingWrapper);
-            container.scrollTop = container.scrollHeight;
 
             try {
                 const systemPrompt = PROJECTS[activeProject].systemPrompt;
-                const assistantResponse = await executeAiGeneration(query, systemPrompt);
-                
-                // Clear loading state
-                const currentIndicator = document.getElementById('meshmesh-loading-indicator');
-                if (currentIndicator) currentIndicator.remove();
-
-                // Append real assistant payload
-                conversations[activeProject].push({
-                    role: 'assistant',
-                    text: assistantResponse,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
-
-                // Commit history to sessionStorage for device sandboxing persistence
-                sessionStorage.setItem('meshmesh_chats', JSON.stringify(conversations));
-
-            } catch (err) {
-                console.error(err);
-                const currentIndicator = document.getElementById('meshmesh-loading-indicator');
-                if (currentIndicator) currentIndicator.remove();
-
-                // Inject beautiful error notification bubble inside chat
-                conversations[activeProject].push({
-                    role: 'assistant',
-                    text: `❌ Error encountered during processing:\n\n${err.message}\n\nPlease check your API key, ensure you have sufficient balance/quota, and make sure network configuration supports standard API requests.`,
-                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                });
+                const reply = await executeAiGeneration(query, systemPrompt);
+                conversations[activeProject].push({ role: 'assistant', text: reply });
+                sessionStorage.setItem('mr_chats', JSON.stringify(conversations));
+            } catch(err) {
+                conversations[activeProject].push({ role: 'assistant', text: `❌ Engine fault configuration anomaly:\n\n${err.message}` });
             } finally {
-                // Restore Input Panel state
-                inputElement.disabled = false;
-                sendBtn.disabled = false;
                 renderChatHistory();
-                inputElement.focus();
             }
         }
 
-        // Watch for enter key within message textarea
-        function handleKeyDown(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 handleSendMessage();
             }
         }
 
-        // Clear only the currently selected workspace's local state
-        function clearCurrentChat() {
-            conversations[activeProject] = [];
-            sessionStorage.setItem('meshmesh_chats', JSON.stringify(conversations));
-            renderChatHistory();
+        function saveManualCapture() {
+            const buffer = document.getElementById('capture-buffer').value;
+            if(!buffer.trim()) return alert("Context payload empty.");
+            const blob = new Blob([buffer], { type: "text/markdown;charset=utf-8" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = `${activeProject}-captured-session.md`;
+            a.click();
+            pushLog(`Exported session log: ${activeProject}-captured-session.md`, 'success');
         }
 
-        // Delete completely all chat files
-        function clearAllData() {
-            Object.keys(conversations).forEach(k => {
-                conversations[k] = [];
-            });
-            sessionStorage.setItem('meshmesh_chats', JSON.stringify(conversations));
-            renderChatHistory();
-        }
-
-        // Window load routines
         window.addEventListener('load', () => {
-            loadSavedKeys();
+            const savedGHToken = localStorage.getItem('mr_github_token') || '';
+            document.getElementById('github-token-input').value = savedGHToken;
+            
+            document.getElementById('gemini-key-input').value = sessionStorage.getItem('mr_key_gemini') || '';
+            document.getElementById('claude-key-input').value = sessionStorage.getItem('mr_key_claude') || '';
+            
+            switchProvider(activeProvider);
             selectProject(activeProject);
-            updateConnectionIndicator();
+            pushLog("System framework runtime initialized. Control telemetry connected.", 'info');
         });
     </script>
 </body>
 </html>
+
 
 ```
