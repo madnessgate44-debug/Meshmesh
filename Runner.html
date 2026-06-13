@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mission Runner Dashboard</title>
+    <title>Mission Runner Control Matrix</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script>
@@ -55,7 +55,7 @@
                 </div>
 
                 <div>
-                    <h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Navigation</h3>
+                    <h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">Navigation Modules</h3>
                     <nav class="space-y-1" id="tab-menu-list">
                         <button onclick="switchTab('agent')" id="tab-btn-agent" class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-medium border border-transparent text-sky-400 bg-sky-500/10 transition-all">
                             <i data-lucide="bot" class="w-4 h-4"></i> <span>🤖 Agent Chat Studio</span>
@@ -148,19 +148,33 @@
                 <div id="view-mission" class="space-y-6 hidden">
                     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
                         <div>
-                            <h3 class="text-sm font-bold text-slate-200">Mission Executor Automation</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Paste a system mission JSON manifest file payload to dispatch code assets directly into your connected cloud platform execution engine.</p>
+                            <h3 class="text-sm font-bold text-slate-200">Mission Executor Automation Matrix</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Paste a system mission JSON manifest file payload or standard conversational responses to extract and run device tasks.</p>
                         </div>
                         <div>
-                            <textarea id="mission-json-input" rows="10" placeholder='{ "project": "gahiz-landing", "files": [] }' oninput="validateMissionJson(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-slate-700"></textarea>
+                            <textarea id="mission-json-input" rows="6" placeholder='{ "project": "gahiz-landing", "files": [] }' oninput="validateMissionJson(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-slate-300 focus:outline-none focus:border-slate-700"></textarea>
                             <div id="json-validation-status" class="text-[11px] mt-1.5 text-slate-500">Awaiting payload string entry...</div>
                         </div>
-                        <div class="flex justify-end gap-3">
+                        <div class="flex flex-wrap gap-2 justify-end">
                             <button onclick="loadDemoMission()" class="px-3 py-1.5 border border-slate-800 hover:border-slate-700 rounded-lg text-xs text-slate-400 transition-colors">Load Demo Site Payload</button>
+                            <button onclick="triggerOfflineExtraction()" class="px-3 py-1.5 bg-sky-600/20 hover:bg-sky-600/30 border border-sky-500/30 text-sky-300 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5">
+                                <i data-lucide="scissors" class="w-3.5 h-3.5"></i> Run Offline Step Extractor
+                            </button>
                             <button id="dispatch-cloud-btn" onclick="runMissionPayload()" disabled class="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg shadow-lg shadow-emerald-600/10 transition-all flex items-center gap-2">
                                 <i data-lucide="cloud-lightning" class="w-3.5 h-3.5"></i> Dispatch Cloud Brain Mission
                             </button>
                         </div>
+                    </div>
+
+                    <div id="step-runner-panel" class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4 hidden">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-200">Extracted Action Steps Matrix</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">App processes individual steps sequentially without manual copy overhead.</p>
+                            </div>
+                            <span id="step-count-badge" class="text-[10px] bg-sky-500/10 text-sky-400 px-2.5 py-0.5 rounded-full border border-sky-500/20 font-mono">0 Steps</span>
+                        </div>
+                        <div id="steps-container" class="space-y-2.5 max-h-72 overflow-y-auto pr-1"></div>
                     </div>
                 </div>
 
@@ -178,17 +192,23 @@
                 <div id="view-log" class="space-y-6 hidden">
                     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
                         <div>
-                            <h3 class="text-sm font-bold text-slate-200">GitHub Cloud Brain Tokens</h3>
-                            <p class="text-xs text-slate-500 mt-0.5">Provide a high-clearance Personal Access Token (PAT) with `repo` scopes to permit remote dispatches.</p>
+                            <h3 class="text-sm font-bold text-slate-200">GitHub Cloud Brain Credentials</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Provide a high-clearance Personal Access Token (PAT) to authorize remote dispatches targeting `madnessgate44-debug/Mission-runner`.</p>
                         </div>
-                        <div class="space-y-2">
-                            <label class="block text-xs font-mono text-slate-400">GitHub Access Token (PAT)</label>
-                            <input type="password" id="github-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" oninput="saveGitHubToken(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-700 focus:outline-none">
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-mono text-slate-400 mb-1">GitHub Access Token (PAT)</label>
+                                <input type="password" id="github-token-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" oninput="saveGitHubToken(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-200 placeholder-slate-700 focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-mono text-slate-400 mb-1">Target Cloud Repository Path</label>
+                                <input type="text" id="github-repo-input" value="madnessgate44-debug/Mission-runner" disabled class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs font-mono text-slate-500 select-none">
+                            </div>
                         </div>
                     </div>
 
                     <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 space-y-4">
-                        <h3 class="text-sm font-bold text-slate-200">Activity & Execution Stream</h3>
+                        <h3 class="text-sm font-bold text-slate-200">Activity & Execution Telemetry Stream</h3>
                         <div id="activity-log-box" class="h-48 overflow-y-auto bg-slate-950 border border-slate-800 rounded-xl p-3 font-mono text-[11px] text-slate-400 space-y-1"></div>
                     </div>
                 </div>
@@ -209,6 +229,7 @@
         let activeTab = 'agent';
         let conversations = JSON.parse(sessionStorage.getItem('mr_chats')) || {};
         let activeProvider = sessionStorage.getItem('mr_provider') || 'gemini';
+        let extractedStepsArray = [];
 
         Object.keys(PROJECTS).forEach(k => { if (!conversations[k]) conversations[k] = []; });
 
@@ -295,7 +316,7 @@
             }
             try {
                 const parsed = JSON.parse(text);
-                if(!parsed.project || !parsed.files) throw new Error("Missing parameters (`project` or `files` field arrays structurally unmapped).");
+                if(!parsed.project || !parsed.files) throw new Error("Missing parameters (`project` or `files` arrays structurally unmapped).");
                 status.className = "text-[11px] mt-1.5 text-emerald-400 font-medium";
                 status.innerText = `✓ Valid Mission Manifest File Structure Target: ${parsed.project}`;
                 btn.disabled = false;
@@ -306,7 +327,107 @@
             }
         }
 
-        // TRIGGER CLOUD BRAIN IMPLEMENTATION PIPELINE
+        // OFFLINE STEP EXTRACTOR ALGORITHM IMPLEMENTATION
+        function triggerOfflineExtraction() {
+            const text = document.getElementById('mission-json-input').value;
+            extractedStepsArray = [];
+            
+            if(!text.trim()) {
+                alert("Please input context conversational text inside the matrix console box first.");
+                return;
+            }
+
+            // Regex rule architectures mapping explicit task actions
+            const rules = [
+                { regex: /(?:go\s+to|open|visit)\s+(https?:\/\/[^\s`"]+)/gi, type: 'navigate', icon: 'external-link' },
+                { regex: /(?:copy\s+the\s+text|copy)\s+["']([^"']+)["']/gi, type: 'copy', icon: 'copy' },
+                { regex: /(?:download|save\s+file)\s+([^\s`"]+\.[a-z0-9]+)/gi, type: 'download', icon: 'download' }
+            ];
+
+            rules.forEach(rule => {
+                let match;
+                while ((match = rule.regex.exec(text)) !== null) {
+                    extractedStepsArray.push({
+                        type: rule.type,
+                        target: match[1],
+                        icon: rule.icon,
+                        status: 'pending'
+                    });
+                }
+            });
+
+            // Handle inline fallback step parsing fallback for standalone URLs if no explicit command triggers matches
+            if (extractedStepsArray.length === 0) {
+                const urlFallbackRegex = /(https?:\/\/[^\s`"]+)/gi;
+                let urlMatch;
+                while ((urlMatch = urlFallbackRegex.exec(text)) !== null) {
+                    extractedStepsArray.push({ type: 'navigate', target: urlMatch[1], icon: 'external-link', status: 'pending' });
+                }
+            }
+
+            renderExtractedSteps();
+        }
+
+        function renderExtractedSteps() {
+            const panel = document.getElementById('step-runner-panel');
+            const container = document.getElementById('steps-container');
+            const badge = document.getElementById('step-count-badge');
+            
+            container.innerHTML = '';
+            badge.innerText = `${extractedStepsArray.length} Steps Found`;
+
+            if (extractedStepsArray.length === 0) {
+                panel.classList.add('hidden');
+                alert("Step Extractor Engine ran successfully: 0 structured target directives found.");
+                return;
+            }
+
+            panel.classList.remove('hidden');
+            extractedStepsArray.forEach((step, idx) => {
+                const item = document.createElement('div');
+                item.className = "flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-300 font-mono";
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 truncate">
+                        <span class="text-[10px] text-slate-600">#0${idx+1}</span>
+                        <div class="p-1.5 rounded-lg bg-slate-900 text-sky-400">
+                            <i data-lucide="${step.icon}" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div class="truncate text-left">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 block">${step.type}</span>
+                            <span class="truncate text-slate-300 block text-[11px]">${step.target}</span>
+                        </div>
+                    </div>
+                    <button onclick="executeStep(${idx})" class="px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] rounded font-sans font-medium text-sky-400 transition-colors">Run Action</button>
+                `;
+                container.appendChild(item);
+            });
+            lucide.createIcons();
+        }
+
+        // STEP EXECUTOR MATRIX
+        function executeStep(index) {
+            const step = extractedStepsArray[index];
+            pushLog(`Running local pipeline action: [${step.type}] -> ${step.target}`, 'info');
+
+            if (step.type === 'navigate') {
+                window.open(step.target, '_blank');
+                pushLog(`Dispatched window tab destination vector.`, 'success');
+            } else if (step.type === 'copy') {
+                navigator.clipboard.writeText(step.target);
+                pushLog(`Target string payload attached directly to phone system clipboard.`, 'success');
+                alert("📋 Text content copied to device clipboard!");
+            } else if (step.type === 'download') {
+                // Device fallback file saving download tracking sequence
+                const blob = new Blob(["// Mission Runner Auto Save Asset Data Pipeline\n"], { type: "text/plain" });
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = step.target;
+                a.click();
+                pushLog(`Triggered anchor node fallback binary download sequence asset: ${step.target}`, 'success');
+            }
+        }
+
+        // TRIGGER CLOUD BRAIN DISPATCH PIPELINE IMPLEMENTATION
         async function triggerCloudBrain(task, taskPayload) {
             const GITHUB_TOKEN = localStorage.getItem('mr_github_token');
             if (!GITHUB_TOKEN) {
@@ -315,9 +436,9 @@
                 return;
             }
 
-            pushLog(`Initiating dispatch request targeting task: ${task}...`, 'info');
+            pushLog(`Initiating authenticated dispatch payload targeting task: ${task}...`, 'info');
             try {
-                // Hits the remote repository_dispatch triggers sequence
+                // Transmits custom remote repository_dispatch event tracking array schemas
                 const response = await fetch(
                     'https://api.github.com/repos/madnessgate44-debug/Mission-runner/dispatches',
                     {
@@ -338,8 +459,8 @@
                 );
 
                 if (response.status === 204) {
-                    pushLog(`🚀 Cloud workflow event accepted! GitHub brain.yml is now executing.`, 'success');
-                    alert('✅ Core Mission Sent! GitHub Actions has verified your clearance and is spinning up a server environment to create your pages.');
+                    pushLog(`🚀 Cloud workflow context event accepted! GitHub brain.yml is running execution loops.`, 'success');
+                    alert('✅ Cloud Brain Dispatched! GitHub Actions verified credentials and started server deployment processes.');
                 } else {
                     const errTxt = await response.text();
                     pushLog(`GitHub API Engine Refusal HTTP:${response.status} - ${errTxt}`, 'error');
@@ -366,7 +487,7 @@
             const demo = {
                 project: "gahiz-landing",
                 files: [
-                    { path: "index.html", content: "<!DOCTYPE html><html><head><title>Gahiz Mock Platform</title></head><body style='background:#0f172a;color:#f8fafc;font-family:sans-serif;padding:3rem;'><h1 style='color:#38bdf8;'>Gahiz (جاهز)</h1><p>Automated cloud deployment tracking success.</p></body></html>" }
+                    { path: "index.html", content: "<!DOCTYPE html><html><head><title>Gahiz Hub</title></head><body style='background:#020617;color:#f8fafc;font-family:sans-serif;padding:3rem;'><h1 style='color:#38bdf8;'>Gahiz Platform (جاهز)</h1><p>Automated deployment tracking connection confirmed operational.</p></body></html>" }
                 ]
             };
             const element = document.getElementById('mission-json-input');
@@ -379,7 +500,6 @@
             const p = PROJECTS[projectId];
             document.getElementById('current-project-title').innerHTML = `<i data-lucide="${p.icon}" class="w-4 h-4 text-sky-400"></i> <span>${p.name} Workspace Suite</span>`;
             
-            // Re-render project lists to reflect selection active states
             const container = document.getElementById('project-list');
             container.innerHTML = '';
             Object.values(PROJECTS).forEach(proj => {
@@ -444,7 +564,6 @@
                 if (!res.ok) throw new Error(data.error?.message || "Google Cluster operational state failure.");
                 return data.candidates?.[0]?.content?.parts?.[0]?.text;
             } else {
-                // Claude configuration mapping matrix logic
                 const model = sessionStorage.getItem('mr_model_claude') || 'claude-3-5-sonnet-20241022';
                 const res = await fetch('https://api.anthropic.com/v1/messages', {
                     method: 'POST',
