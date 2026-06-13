@@ -1,1242 +1,667 @@
+```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#1a0f00">
-  <title>Mission Runner v7.0</title>
-  <link rel="manifest" href="manifest.json">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #2a1400; /* Modified to Deep Orange-Brown */
-      --surface: #3d2000; /* Modified to Dark Orange-Brown */
-      --surface2: #522d02; /* Modified to Medium Orange-Brown */
-      --border: #6e3f05; /* Modified to Warm Amber Border */
-      --accent: #ff9100; /* Modified to Bright Orange Accent */
-      --accent2: #ff3d71;
-      --accent3: #ffe600;
-      --green: #00e676;
-      --text: #fff3e0; /* Modified to Warm Soft Cream */
-      --muted: #a68463; /* Modified to Muted Tan */
-      --mono: 'Space Mono', monospace;
-      --sans: 'Syne', sans-serif;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-    body {
-      font-family: var(--sans);
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      padding: 0;
-      overflow-x: hidden;
-    }
-
-    /* ── NOISE TEXTURE OVERLAY ── */
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0.4;
-    }
-
-    /* ── HEADER ── */
-    .header {
-      padding: 1.4em 1.2em 1em;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      position: sticky;
-      top: 0;
-      background: rgba(42,20,0,0.95);
-      backdrop-filter: blur(12px);
-      z-index: 100;
-    }
-
-    .header-left { display: flex; align-items: center; gap: 0.6em; }
-
-    .logo {
-      font-family: var(--sans);
-      font-weight: 800;
-      font-size: 1.15em;
-      letter-spacing: -0.5px;
-      color: var(--text);
-    }
-
-    .logo span { color: var(--accent); }
-
-    .version-pill {
-      font-family: var(--mono);
-      font-size: 0.6em;
-      background: var(--accent);
-      color: #000;
-      padding: 0.2em 0.55em;
-      border-radius: 20px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-    }
-
-    .status-dot {
-      width: 8px; height: 8px;
-      background: var(--green);
-      border-radius: 50%;
-      box-shadow: 0 0 6px var(--green);
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    /* ── TABS ── */
-    .tabs {
-      display: flex;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding: 0.8em 1em;
-      gap: 0.5em;
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: 57px;
-      background: rgba(42,20,0,0.95);
-      backdrop-filter: blur(12px);
-      z-index: 99;
-    }
-
-    .tabs::-webkit-scrollbar { display: none; }
-
-    .tab {
-      flex-shrink: 0;
-      font-family: var(--sans);
-      font-size: 0.8em;
-      font-weight: 600;
-      padding: 0.5em 1em;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      background: transparent;
-      color: var(--muted);
-      cursor: pointer;
-      transition: all 0.2s;
-      white-space: nowrap;
-    }
-
-    .tab.active {
-      background: var(--accent);
-      color: #000;
-      border-color: var(--accent);
-    }
-
-    /* ── PANELS ── */
-    .panel { display: none; padding: 1em; flex-direction: column; gap: 1em; }
-    .panel.active { display: flex; }
-
-    /* ── CARDS ── */
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 1em;
-      display: flex;
-      flex-direction: column;
-      gap: 0.8em;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      opacity: 0.3;
-    }
-
-    .card-label {
-      font-family: var(--mono);
-      font-size: 0.65em;
-      color: var(--accent);
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      font-weight: 700;
-    }
-
-    .card-title {
-      font-size: 1em;
-      font-weight: 600;
-      color: var(--text);
-    }
-
-    /* ── INPUTS ── */
-    textarea, input[type="text"], input[type="password"] {
-      width: 100%;
-      background: var(--surface2);
-      color: var(--text);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.8em;
-      font-size: 0.88em;
-      font-family: var(--mono);
-      resize: vertical;
-      transition: border-color 0.2s;
-      line-height: 1.5;
-    }
-
-    textarea:focus, input:focus {
-      outline: none;
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px rgba(255,145,0,0.08);
-    }
-
-    textarea::placeholder, input::placeholder { color: var(--muted); }
-
-    /* ── BUTTONS ── */
-    .btn {
-      font-family: var(--sans);
-      font-weight: 700;
-      font-size: 0.9em;
-      padding: 0.85em 1em;
-      border-radius: 10px;
-      border: none;
-      cursor: pointer;
-      transition: all 0.18s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.4em;
-      width: 100%;
-      letter-spacing: 0.3px;
-    }
-
-    .btn:active { transform: scale(0.97); }
-    .btn:disabled { opacity: 0.4; pointer-events: none; }
-
-    .btn-primary { background: var(--accent); color: #000; }
-    .btn-primary:hover { background: #ffaa33; }
-
-    .btn-danger { background: var(--accent2); color: #fff; }
-    .btn-success { background: var(--green); color: #000; }
-    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
-    .btn-gold { background: var(--accent3); color: #000; }
-
-    .btn-row { display: flex; gap: 0.5em; }
-    .btn-row .btn { flex: 1; }
-
-    /* ── PASTE HELPER ── */
-    .paste-btn {
-      font-family: var(--mono);
-      font-size: 0.7em;
-      color: var(--accent);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 0.2em 0;
-      text-align: right;
-      width: 100%;
-    }
-
-    /* ── AI STEPS OUTPUT ── */
-    .steps-output {
-      display: none;
-      flex-direction: column;
-      gap: 0.5em;
-    }
-
-    .steps-output.show { display: flex; }
-
-    .step-item {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-left: 3px solid var(--accent);
-      border-radius: 8px;
-      padding: 0.75em;
-      display: flex;
-      align-items: flex-start;
-      gap: 0.7em;
-    }
-
-    .step-item.done { border-left-color: var(--green); opacity: 0.6; }
-    .step-item.running { border-left-color: var(--accent3); }
-
-    .step-num {
-      font-family: var(--mono);
-      font-size: 0.65em;
-      color: var(--accent);
-      background: rgba(255,145,0,0.1);
-      padding: 0.2em 0.4em;
-      border-radius: 4px;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .step-text {
-      font-size: 0.85em;
-      line-height: 1.4;
-      color: var(--text);
-      flex: 1;
-    }
-
-    .step-action {
-      font-family: var(--mono);
-      font-size: 0.65em;
-      color: var(--muted);
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed;
-      bottom: 1.5em;
-      left: 50%;
-      transform: translateX(-50%) translateY(100px);
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 0.75em 1.2em;
-      font-size: 0.85em;
-      font-weight: 600;
-      z-index: 9999;
-      transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
-      white-space: nowrap;
-      max-width: 90vw;
-    }
-
-    .toast.show { transform: translateX(-50%) translateY(0); }
-    .toast.success { border-color: var(--green); color: var(--green); }
-    .toast.error { border-color: var(--accent2); color: var(--accent2); }
-    .toast.info { border-color: var(--accent); color: var(--accent); }
-
-    /* ── LOG ── */
-    .log-panel {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.7em;
-      max-height: 140px;
-      overflow-y: auto;
-      font-family: var(--mono);
-      font-size: 0.68em;
-      color: var(--muted);
-      line-height: 1.6;
-    }
-
-    .log-panel::-webkit-scrollbar { width: 4px; }
-    .log-panel::-webkit-scrollbar-track { background: transparent; }
-    .log-panel::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .log-line { padding: 1px 0; }
-    .log-line.ok { color: var(--green); }
-    .log-line.err { color: var(--accent2); }
-    .log-line.info { color: var(--accent); }
-
-    /* ── ALERT CARDS ── */
-    .alert-card {
-      display: none;
-      background: var(--surface);
-      border: 1px solid var(--accent);
-      border-radius: 14px;
-      padding: 1em;
-      gap: 0.8em;
-      flex-direction: column;
-      animation: slideIn 0.3s ease;
-    }
-
-    .alert-card.show { display: flex; }
-
-    @keyframes slideIn {
-      from { opacity: 0; transform: translateY(-10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .alert-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .alert-title {
-      font-weight: 700;
-      font-size: 0.9em;
-      color: var(--accent);
-    }
-
-    .alert-preview {
-      font-size: 0.8em;
-      color: var(--muted);
-      line-height: 1.5;
-      font-family: var(--mono);
-    }
-
-    /* ── PROGRESS BAR ── */
-    .progress-wrap {
-      display: none;
-      background: var(--surface2);
-      border-radius: 6px;
-      height: 6px;
-      overflow: hidden;
-    }
-
-    .progress-wrap.show { display: block; }
-
-    .progress-bar {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent), var(--green));
-      border-radius: 6px;
-      transition: width 0.4s ease;
-      width: 0%;
-    }
-
-    /* ── AI LOADING ── */
-    .ai-loading {
-      display: none;
-      align-items: center;
-      gap: 0.6em;
-      font-family: var(--mono);
-      font-size: 0.75em;
-      color: var(--accent);
-    }
-
-    .ai-loading.show { display: flex; }
-
-    .ai-dots span {
-      display: inline-block;
-      width: 4px; height: 4px;
-      background: var(--accent);
-      border-radius: 50%;
-      animation: dot 1.2s infinite;
-      margin: 0 1px;
-    }
-
-    .ai-dots span:nth-child(2) { animation-delay: 0.2s; }
-    .ai-dots span:nth-child(3) { animation-delay: 0.4s; }
-
-    @keyframes dot {
-      0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
-      40% { transform: scale(1); opacity: 1; }
-    }
-
-    /* ── FOOTER ── */
-    .footer {
-      padding: 1.5em 1em;
-      text-align: center;
-      font-family: var(--mono);
-      font-size: 0.6em;
-      color: var(--muted);
-      border-top: 1px solid var(--border);
-      line-height: 2;
-    }
-
-    /* ── MISSION JSON HIGHLIGHT ── */
-    .json-valid { border-color: var(--green) !important; }
-    .json-invalid { border-color: var(--accent2) !important; }
-
-    /* ── DIVIDER ── */
-    .divider {
-      font-family: var(--mono);
-      font-size: 0.6em;
-      color: var(--muted);
-      text-align: center;
-      position: relative;
-    }
-
-    .divider::before, .divider::after {
-      content: '';
-      position: absolute;
-      top: 50%;
-      width: 35%;
-      height: 1px;
-      background: var(--border);
-    }
-
-    .divider::before { left: 0; }
-    .divider::after { right: 0; }
-
-    /* ── COPY BUTTON ── */
-    .copy-btn {
-      font-family: var(--mono);
-      font-size: 0.65em;
-      color: var(--muted);
-      background: none;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 0.2em 0.5em;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-
-    .copy-btn:hover { color: var(--accent); border-color: var(--accent); }
-
-    /* ── CHAT INTERFACE ── */
-    .chat-area {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 0.8em;
-      min-height: 120px;
-      max-height: 220px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6em;
-    }
-
-    .chat-area::-webkit-scrollbar { width: 3px; }
-    .chat-area::-webkit-scrollbar-thumb { background: var(--border); }
-
-    .chat-bubble {
-      max-width: 85%;
-      padding: 0.6em 0.8em;
-      border-radius: 10px;
-      font-size: 0.82em;
-      line-height: 1.45;
-    }
-
-    .chat-bubble.user {
-      background: var(--accent);
-      color: #000;
-      align-self: flex-end;
-      border-bottom-right-radius: 3px;
-    }
-
-    .chat-bubble.ai {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: var(--text);
-      align-self: flex-start;
-      border-bottom-left-radius: 3px;
-    }
-
-    .chat-input-row {
-      display: flex;
-      gap: 0.5em;
-    }
-
-    .chat-input-row textarea {
-      flex: 1;
-      resize: none;
-      min-height: 44px;
-      max-height: 120px;
-    }
-
-    .chat-send {
-      width: 44px;
-      min-width: 44px;
-      height: 44px;
-      border-radius: 10px;
-      background: var(--accent);
-      border: none;
-      cursor: pointer;
-      font-size: 1.1em;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-
-    .chat-send:active { transform: scale(0.95); }
-  </style>
-</head>
-<body>
-
-<div class="toast" id="toast"></div>
-
-<div class="header">
-  <div class="header-left">
-    <div class="logo">Mission<span>Runner</span></div>
-    <div class="version-pill">v7.0</div>
-  </div>
-  <div class="status-dot"></div>
-</div>
-
-<div class="tabs">
-  <button class="tab active" onclick="switchTab('agent')">🤖 Agent</button>
-  <button class="tab" onclick="switchTab('mission')">📁 Mission</button>
-  <button class="tab" onclick="switchTab('capture')">💾 Capture</button>
-  <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
-  <button class="tab" onclick="switchTab('log')">📋 Log</button>
-</div>
-
-<div class="panel active" id="tab-agent">
-
-  <div class="alert-card" id="autoSaveCard">
-    <div class="alert-header">
-      <div class="alert-title">📥 Auto-Save Ready</div>
-      <span style="font-family:var(--mono);font-size:0.7em;color:var(--muted);" id="autoProjectLabel"></span>
-    </div>
-    <div class="alert-preview" id="autoPreview"></div>
-    <button class="btn btn-success" onclick="downloadAutoSave()">⬇️ Download Conversation</button>
-  </div>
-
-  <div class="alert-card" id="shareCard">
-    <div class="alert-header">
-      <div class="alert-title">📤 Shared Content</div>
-    </div>
-    <div class="alert-preview" id="sharePreview"></div>
-    <input type="text" id="shareProject" placeholder="Project name (e.g. gahiz)" value="general">
-    <button class="btn btn-primary" onclick="downloadShared()">⬇️ Save Shared Content</button>
-  </div>
-
-  <div class="card">
-    <div class="card-label">AI Step Extractor</div>
-    <div class="card-title">Paste any conversation or action list</div>
-
-    <button class="paste-btn" onclick="pasteFromClipboard('extractInput')">⌨️ Paste from clipboard</button>
-    <textarea id="extractInput" rows="5" placeholder="Paste your AI conversation here... The agent will extract all action steps automatically."></textarea>
-
-    <div class="ai-loading" id="aiLoading">
-      <div class="ai-dots"><span></span><span></span><span></span></div>
-      Extracting steps...
-    </div>
-
-    <button class="btn btn-primary" onclick="extractSteps()">⚡ Extract Action Steps</button>
-  </div>
-
-  <div class="card" id="stepsCard" style="display:none;">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div class="card-label">Action Steps</div>
-      <button class="copy-btn" onclick="copyAllSteps()">copy all</button>
-    </div>
-    <div class="steps-output show" id="stepsOutput"></div>
-    <div class="progress-wrap" id="progressWrap">
-      <div class="progress-bar" id="progressBar"></div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="clearSteps()">🗑️ Clear</button>
-      <button class="btn btn-gold" onclick="runAllSteps()">▶ Execute All</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">Quick AI Chat</div>
-    <div class="card-title">Ask anything, get step-by-step instructions</div>
-    <div class="chat-area" id="chatArea">
-      <div class="chat-bubble ai">👋 Hi Ahmed! Tell me what you need to do and I'll break it into steps for you.</div>
-    </div>
-    <div class="chat-input-row">
-      <textarea id="chatInput" rows="1" placeholder="Type or speak your task..." onkeydown="chatKeyDown(event)"></textarea>
-      <button class="chat-send" onclick="sendChat()">↑</button>
-    </div>
-  </div>
-
-</div>
-
-<div class="panel" id="tab-mission">
-
-  <div class="card">
-    <div class="card-label">Mission Executor</div>
-    <div class="card-title">Paste JSON → Creates files on your device</div>
-
-    <button class="paste-btn" onclick="pasteFromClipboard('missionInput')">⌨️ Paste from clipboard</button>
-    <textarea id="missionInput" rows="8" placeholder='{"project":"my-app","files":[{"path":"index.html","content":"..."}]}' oninput="validateJSON(this)"></textarea>
-
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="loadDemoMission()">📦 Demo</button>
-      <button class="btn btn-ghost" onclick="clearMission()">🗑️ Clear</button>
-    </div>
-
-    <div class="progress-wrap" id="missionProgress">
-      <div class="progress-bar" id="missionProgressBar"></div>
-    </div>
-
-    <button class="btn btn-primary" id="runMissionBtn" onclick="runMission()">▶ Run Mission (Create Files)</button>
-  </div>
-
-  <div class="card">
-    <div class="card-label">How It Works</div>
-    <div style="font-size:0.82em;color:var(--muted);line-height:1.7;font-family:var(--mono);">
-      Android Chrome → folder picker opens<br>
-      iOS / fallback → files download one by one<br>
-      Max file size: browser memory limit<br>
-      Supports: .html .css .js .md .json .txt
-    </div>
-  </div>
-
-</div>
-
-<div class="panel" id="tab-capture">
-
-  <div class="card">
-    <div class="card-label">Capture Conversation</div>
-    <div class="card-title">Save any AI chat as a file</div>
-
-    <input type="text" id="manualProject" placeholder="Project name (e.g. gahiz, content-factory)">
-    <button class="paste-btn" onclick="pasteFromClipboard('manualConversation')">⌨️ Paste from clipboard</button>
-    <textarea id="manualConversation" rows="6" placeholder="Paste full conversation here..."></textarea>
-    <button class="btn btn-success" onclick="manualSave()">💾 Download as .md File</button>
-  </div>
-
-  <div class="divider">OR</div>
-
-  <div class="card">
-    <div class="card-label">Quick Note</div>
-    <div class="card-title">Save a quick note or action list</div>
-
-    <textarea id="quickNote" rows="4" placeholder="Type your quick note here..."></textarea>
-    <button class="btn btn-ghost" onclick="saveQuickNote()">📝 Save Note</button>
-  </div>
-
-</div>
-
-<div class="panel" id="tab-settings">
-  <div class="card">
-    <div class="card-label">Gateway Engine Routing</div>
-    <div class="card-title">Configure Standalone Mobile Connections</div>
-
-    <label style="font-family:var(--mono);font-size:0.7em;color:var(--accent);">Proxy Gateway Endpoint</label>
-    <input type="text" id="proxyGatewayUrl" placeholder="https://your-custom-proxy.railway.internal/api">
-
-    <label style="font-family:var(--mono);font-size:0.7em;color:var(--accent);margin-top:0.5em;">Claude API Token</label>
-    <input type="password" id="proxyClaudeKey" placeholder="sk-ant-...">
-
-    <button class="btn btn-primary" style="margin-top:0.5em;" onclick="saveProxySettings()">💾 Apply Configuration</button>
-  </div>
-</div>
-
-<div class="panel" id="tab-log">
-
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;">
-      <div class="card-label">Activity Log</div>
-      <button class="copy-btn" onclick="clearLog()">clear</button>
-    </div>
-    <div class="log-panel" id="logFull"></div>
-  </div>
-
-  <div class="card">
-    <div class="card-label">App Info</div>
-    <div style="font-family:var(--mono);font-size:0.7em;color:var(--muted);line-height:2;">
-      Version: <span style="color:var(--accent)">7.0.0</span><br>
-      Built for: <span style="color:var(--text)">Gahiz & Content Factory</span><br>
-      Platform: <span style="color:var(--text)">Browser (PWA)</span><br>
-      AI: <span style="color:var(--accent)">Claude Sonnet 4</span>
-    </div>
-  </div>
-
-</div>
-
-<div class="footer">
-  Mission Runner v7.0 · Built for Ahmed<br>
-  Gahiz × Content Factory × The Wired Leader
-</div>
-
-<script>
-// ══════════════════════════════════════
-// GLOBAL STATE
-// ══════════════════════════════════════
-let pendingAutoSave = null;
-let pendingShareText = null;
-let extractedSteps = [];
-let chatHistory = [];
-
-// ══════════════════════════════════════
-// TABS
-// ══════════════════════════════════════
-function switchTab(name) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  const idx = ['agent','mission','capture','settings','log'].indexOf(name);
-  document.querySelectorAll('.tab')[idx].classList.add('active');
-  document.getElementById('tab-' + name).classList.add('active');
-}
-
-// ══════════════════════════════════════
-// TOAST
-// ══════════════════════════════════════
-function toast(msg, type = 'info', duration = 3000) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className = 'toast show ' + type;
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.className = 'toast'; }, duration);
-}
-
-// ══════════════════════════════════════
-// LOG
-// ══════════════════════════════════════
-function log(msg, type = '') {
-  const now = new Date().toLocaleTimeString('en', {hour12:false});
-  const el = document.getElementById('logFull');
-  const line = document.createElement('div');
-  line.className = 'log-line ' + type;
-  line.textContent = `[${now}] ${msg}`;
-  el.appendChild(line);
-  el.scrollTop = el.scrollHeight;
-}
-
-function clearLog() {
-  document.getElementById('logFull').innerHTML = '';
-}
-
-// ══════════════════════════════════════
-// PROXY & LOCALSTORAGE LOGIC
-// ══════════════════════════════════════
-function saveProxySettings() {
-  const url = document.getElementById('proxyGatewayUrl').value.trim();
-  const key = document.getElementById('proxyClaudeKey').value.trim();
-  localStorage.setItem('mr_proxy_url', url);
-  localStorage.setItem('mr_claude_key', key);
-  toast('✅ Routing profiles updated', 'success');
-  log('Local network configuration committed to localStorage', 'ok');
-}
-
-function loadProxySettings() {
-  const savedUrl = localStorage.getItem('mr_proxy_url') || '';
-  const savedKey = localStorage.getItem('mr_claude_key') || '';
-  document.getElementById('proxyGatewayUrl').value = savedUrl;
-  document.getElementById('proxyClaudeKey').value = savedKey;
-}
-
-function getProxyHeaders() {
-  const headers = { 'Content-Type': 'application/json' };
-  const key = localStorage.getItem('mr_claude_key');
-  if (key) {
-    headers['x-claude-key'] = key;
-  }
-  return headers;
-}
-
-// ══════════════════════════════════════
-// CLIPBOARD PASTE
-// ══════════════════════════════════════
-async function pasteFromClipboard(targetId) {
-  try {
-    const text = await navigator.clipboard.readText();
-    document.getElementById(targetId).value = text;
-    toast('✅ Pasted from clipboard', 'success');
-    log('Pasted to #' + targetId, 'info');
-    if (targetId === 'missionInput') validateJSON(document.getElementById('missionInput'));
-  } catch(e) {
-    toast('⚠️ Tap inside the box first, then paste manually', 'error');
-  }
-}
-
-// ══════════════════════════════════════
-// AI STEP EXTRACTOR
-// ══════════════════════════════════════
-async function extractSteps() {
-  const text = document.getElementById('extractInput').value.trim();
-  if (!text) { toast('⚠️ Paste a conversation first', 'error'); return; }
-
-  const proxyUrl = localStorage.getItem('mr_proxy_url');
-  if (!proxyUrl) {
-    toast('⚠️ Setup your Proxy Gateway URL in Settings tab first', 'error');
-    switchTab('settings');
-    return;
-  }
-
-  document.getElementById('aiLoading').classList.add('show');
-  document.querySelector('[onclick="extractSteps()"]').disabled = true;
-  log('Forwarding layout request to external proxy layer...', 'info');
-
-  try {
-    const response = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: getProxyHeaders(),
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: `You are an action step extractor. The user will give you a conversation or text. Extract all actionable steps — things the user needs to DO. Return ONLY a JSON array, no preamble, no markdown, no backticks. Format: [{"step":1,"action":"Open Instagram","type":"navigate","detail":"instagram.com"},{"step":2,"action":"Copy this text","type":"copy","detail":"the text to copy"}]. Types: navigate, copy, paste, download, open, click, write, search, other.`,
-        messages: [{ role: 'user', content: text }]
-      })
-    });
-
-    const data = await response.json();
-    let raw = data?.content?.[0]?.text || '[]';
-    raw = raw.replace(/```json|```/g, '').trim();
-
-    let steps;
-    try { steps = JSON.parse(raw); } catch(e) { steps = []; }
-
-    if (!Array.isArray(steps) || steps.length === 0) {
-      toast('⚠️ No steps found — try pasting more context', 'error');
-      log('No steps extracted', 'err');
-      return;
-    }
-
-    extractedSteps = steps;
-    renderSteps(steps);
-    document.getElementById('stepsCard').style.display = 'flex';
-    toast(`✅ ${steps.length} steps extracted`, 'success');
-    log(`Extracted ${steps.length} steps`, 'ok');
-
-  } catch(e) {
-    toast('❌ Network Engine Failure: Check settings/proxy connectivity', 'error');
-    log('Gateway routing exception: ' + e.message, 'err');
-  } finally {
-    document.getElementById('aiLoading').classList.remove('show');
-    document.querySelector('[onclick="extractSteps()"]').disabled = false;
-  }
-}
-
-function renderSteps(steps) {
-  const out = document.getElementById('stepsOutput');
-  out.innerHTML = '';
-  steps.forEach((s, i) => {
-    const div = document.createElement('div');
-    div.className = 'step-item';
-    div.id = 'step-' + i;
-    div.innerHTML = `
-      <div class="step-num">${s.step || i+1}</div>
-      <div class="step-text">${s.action || s.text || JSON.stringify(s)}</div>
-      <div class="step-action">${s.type || ''}</div>
-    `;
-    out.appendChild(div);
-  });
-}
-
-function clearSteps() {
-  extractedSteps = [];
-  document.getElementById('stepsOutput').innerHTML = '';
-  document.getElementById('stepsCard').style.display = 'none';
-  document.getElementById('extractInput').value = '';
-  document.getElementById('progressWrap').classList.remove('show');
-}
-
-function copyAllSteps() {
-  if (!extractedSteps.length) return;
-  const text = extractedSteps.map((s,i) => `${i+1}. ${s.action || s.text}`).join('\n');
-  navigator.clipboard.writeText(text).then(() => toast('✅ Steps copied', 'success'));
-}
-
-async function runAllSteps() {
-  if (!extractedSteps.length) return;
-
-  const wrap = document.getElementById('progressWrap');
-  const bar = document.getElementById('progressBar');
-  wrap.classList.add('show');
-  bar.style.width = '0%';
-
-  log('Running all steps...', 'info');
-  toast('▶ Executing steps...', 'info');
-
-  for (let i = 0; i < extractedSteps.length; i++) {
-    const s = extractedSteps[i];
-    const stepEl = document.getElementById('step-' + i);
-    if (stepEl) stepEl.classList.add('running');
-
-    await executeStep(s, i);
-
-    if (stepEl) { stepEl.classList.remove('running'); stepEl.classList.add('done'); }
-    bar.style.width = ((i + 1) / extractedSteps.length * 100) + '%';
-    await new Promise(r => setTimeout(r, 400));
-  }
-
-  toast('✅ All steps complete!', 'success');
-  log('All steps executed', 'ok');
-}
-
-async function executeStep(step, idx) {
-  const type = (step.type || '').toLowerCase();
-  const detail = step.detail || step.action || '';
-
-  log(`Step ${idx+1}: ${step.action} [${type}]`, 'info');
-
-  if (type === 'navigate' && detail.includes('.')) {
-    const url = detail.startsWith('http') ? detail : 'https://' + detail;
-    window.open(url, '_blank');
-  } else if (type === 'copy' && detail) {
-    try { await navigator.clipboard.writeText(detail); } catch(e) {}
-  } else if (type === 'download' && detail) {
-    downloadFile(detail, 'download-' + idx + '.txt', 'text/plain');
-  } else if (type === 'open' && detail.includes('.')) {
-    window.open(detail.startsWith('http') ? detail : 'https://' + detail, '_blank');
-  }
-}
-
-// ══════════════════════════════════════
-// QUICK CHAT
-// ══════════════════════════════════════
-function chatKeyDown(e) {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendChat();
-  }
-}
-
-async function sendChat() {
-  const input = document.getElementById('chatInput');
-  const msg = input.value.trim();
-  if (!msg) return;
-
-  const proxyUrl = localStorage.getItem('mr_proxy_url');
-  if (!proxyUrl) {
-    toast('⚠️ Configure your Proxy Gateway URL in Settings tab first', 'error');
-    switchTab('settings');
-    return;
-  }
-
-  appendChat(msg, 'user');
-  input.value = '';
-  chatHistory.push({ role: 'user', content: msg });
-
-  const thinkingBubble = appendChat('...', 'ai', true);
-
-  try {
-    const response = await fetch(proxyUrl, {
-      method: 'POST',
-      headers: getProxyHeaders(),
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        system: 'You are a mobile productivity assistant helping Ahmed, a freelance consultant in Egypt who works on his Samsung phone only. He uses Gahiz (AI interview simulation platform) and Content Factory (AI content production system). Be concise, practical, and give numbered steps when explaining tasks. Keep responses short — he is on a phone screen.',
-        messages: chatHistory
-      })
-    });
-
-    const data = await response.json();
-    const reply = data?.content?.[0]?.text || 'Sorry, no response from transaction gateway.';
-    thinkingBubble.textContent = reply;
-    chatHistory.push({ role: 'assistant', content: reply });
-    log('Chat response verified and delivered', 'ok');
-  } catch(e) {
-    thinkingBubble.textContent = '❌ Connection Error: Check proxy configuration';
-    log('Chat gateway delivery failure: ' + e.message, 'err');
-  }
-}
-
-function appendChat(msg, role, isTemp = false) {
-  const area = document.getElementById('chatArea');
-  const bubble = document.createElement('div');
-  bubble.className = 'chat-bubble ' + role;
-  bubble.textContent = msg;
-  area.appendChild(bubble);
-  area.scrollTop = area.scrollHeight;
-  return bubble;
-}
-
-// ══════════════════════════════════════
-// MISSION EXECUTOR
-// ══════════════════════════════════════
-function validateJSON(el) {
-  try { JSON.parse(el.value); el.className = el.className.replace(' json-invalid','').replace(' json-valid','') + ' json-valid'; }
-  catch(e) { if (el.value.length > 3) el.className = el.className.replace(' json-valid','').replace(' json-invalid','') + ' json-invalid'; }
-}
-
-function loadDemoMission() {
-  const demo = {
-    project: "demo-project",
-    files: [
-      { path: "index.html", content: "<!DOCTYPE html>\n<html>\n<head><title>Demo</title></head>\n<body>\n  <h1>Hello from Mission Runner!</h1>\n</body>\n</html>" },
-      { path: "css/style.css", content: "body { background: #0a0a0a; color: #e0e0e0; font-family: sans-serif; }" },
-      { path: "README.md", content: "# Demo Project\nCreated by Mission Runner v7.0" }
-    ]
-  };
-  document.getElementById('missionInput').value = JSON.stringify(demo, null, 2);
-  validateJSON(document.getElementById('missionInput'));
-  log('Demo mission loaded', 'info');
-}
-
-function clearMission() {
-  document.getElementById('missionInput').value = '';
-  const el = document.getElementById('missionInput');
-  el.className = el.className.replace(' json-valid','').replace(' json-invalid','');
-}
-
-async function runMission() {
-  const raw = document.getElementById('missionInput').value.trim();
-  if (!raw) { toast('⚠️ Paste a mission first', 'error'); return; }
-
-  let mission;
-  try { mission = JSON.parse(raw); }
-  catch(e) { toast('❌ Invalid JSON — check formatting', 'error'); return; }
-
-  if (!mission.files || !Array.isArray(mission.files)) {
-    toast('❌ Mission needs a "files" array', 'error'); return;
-  }
-
-  const btn = document.getElementById('runMissionBtn');
-  btn.disabled = true; btn.textContent = '⏳ Processing...';
-
-  const wrap = document.getElementById('missionProgress');
-  const bar = document.getElementById('missionProgressBar');
-  wrap.classList.add('show'); bar.style.width = '0%';
-
-  try {
-    if (typeof window.showDirectoryPicker === 'function') {
-      const dirHandle = await window.showDirectoryPicker();
-      let created = 0;
-      for (let i = 0; i < mission.files.length; i++) {
-        const file = mission.files[i];
-        const parts = file.path.split('/');
-        const fileName = parts.pop();
-        let currentDir = dirHandle;
-        for (const part of parts) {
-          currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meshmesh Portal</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                            950: '#030712',
+                        }
+                    }
+                }
+            }
         }
-        const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(file.content || '');
-        await writable.close();
-        created++;
-        bar.style.width = (created / mission.files.length * 100) + '%';
-        log('Created: ' + file.path, 'ok');
-      }
-      toast(`✅ ${created} files created!`, 'success');
-    } else {
-      for (let i = 0; i < mission.files.length; i++) {
-        const file = mission.files[i];
-        const fname = file.path.split('/').pop();
-        const ext = fname.includes('.') ? fname.split('.').pop() : 'txt';
-        const mimeMap = { html:'text/html', css:'text/css', js:'text/javascript', md:'text/markdown', json:'application/json' };
-        downloadFile(file.content || '', fname, mimeMap[ext] || 'text/plain');
-        bar.style.width = ((i + 1) / mission.files.length * 100) + '%';
-        log('Downloaded: ' + file.path, 'ok');
-        await new Promise(r => setTimeout(r, 600));
-      }
-      toast('✅ Files downloaded individually', 'success');
-    }
-    log('Mission complete ✅', 'ok');
-  } catch(err) {
-    if (err.name === 'AbortError') { toast('⚠️ Cancelled by user', 'error'); }
-    else { toast('❌ ' + err.message, 'error'); log('Mission error: ' + err.message, 'err'); }
-  } finally {
-    btn.disabled = false; btn.textContent = '▶ Run Mission (Create Files)';
-    setTimeout(() => wrap.classList.remove('show'), 2000);
-  }
-}
+    </script>
+    <style>
+        /* Custom scrollbar style for premium dark UI */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #374151;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4b5563;
+        }
+    </style>
+</head>
+<body class="h-full bg-slate-950 text-slate-100 font-sans antialiased overflow-hidden flex flex-col">
 
-// ══════════════════════════════════════
-// MANUAL SAVE
-// ══════════════════════════════════════
-function manualSave() {
-  const project = document.getElementById('manualProject').value.trim() || 'general';
-  const text = document.getElementById('manualConversation').value.trim();
-  if (!text) { toast('⚠️ Paste a conversation first', 'error'); return; }
+    <div id="app" class="flex h-full w-full relative">
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-80 bg-slate-900 border-r border-slate-800 flex flex-col transform -translate-x-full transition-transform duration-300 ease-in-out md:relative md:translate-x-0">
+            <!-- Sidebar Header -->
+            <div class="h-16 px-6 flex items-center justify-between border-b border-slate-800">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center shadow-lg shadow-sky-500/20">
+                        <i data-lucide="sparkles" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <span class="font-bold text-lg bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">Meshmesh</span>
+                </div>
+                <button onclick="toggleSidebar()" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 md:hidden">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
 
-  const now = new Date();
-  const content = `# ${project} — Conversation\n\n**Saved:** ${now.toLocaleString()}\n\n---\n\n${text}`;
-  const filename = `${project}-${now.toISOString().replace(/[:.]/g,'-').slice(0,19)}.md`;
-  downloadFile(content, filename, 'text/markdown');
-  toast('✅ Saved: ' + filename, 'success');
-  log('Saved conversation: ' + filename, 'ok');
-  document.getElementById('manualConversation').value = '';
-}
+            <!-- Workspace Projects Menu -->
+            <div class="flex-1 overflow-y-auto px-4 py-6 space-y-8">
+                <div>
+                    <h3 class="px-3 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">AI Engine Workspaces</h3>
+                    <nav class="space-y-1.5" id="project-list">
+                        <!-- Navigation items will be injected here dynamically -->
+                    </nav>
+                </div>
 
-function saveQuickNote() {
-  const text = document.getElementById('quickNote').value.trim();
-  if (!text) { toast('⚠️ Type something first', 'error'); return; }
-  const now = new Date();
-  const filename = `note-${now.toISOString().replace(/[:.]/g,'-').slice(0,19)}.md`;
-  downloadFile(`# Quick Note\n\n**${now.toLocaleString()}**\n\n---\n\n${text}`, filename, 'text/markdown');
-  toast('✅ Note saved!', 'success');
-  log('Note saved: ' + filename, 'ok');
-  document.getElementById('quickNote').value = '';
-}
+                <!-- Session Storage API Configurations -->
+                <div class="border-t border-slate-800/80 pt-6">
+                    <div class="flex items-center justify-between px-3 mb-4">
+                        <h3 class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Inline Configuration</h3>
+                        <span class="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20 font-mono">Device-Only</span>
+                    </div>
+                    <div class="space-y-4 px-3">
+                        <div>
+                            <label class="block text-xs text-slate-400 mb-1.5 font-medium">Active API Provider</label>
+                            <select id="api-provider" onchange="switchProvider(this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                                <option value="gemini">Google Gemini (Flash 2.5)</option>
+                                <option value="claude">Anthropic Claude</option>
+                            </select>
+                        </div>
+                        
+                        <div id="gemini-key-container" class="space-y-1.5">
+                            <label class="flex justify-between items-center text-xs text-slate-400 font-medium">
+                                <span>Gemini API Key</span>
+                                <a href="https://aistudio.google.com/" target="_blank" class="text-[10px] text-sky-400 hover:underline flex items-center gap-1">Get Key <i data-lucide="external-link" class="w-2.5 h-2.5"></i></a>
+                            </label>
+                            <div class="relative">
+                                <input type="password" id="gemini-key-input" placeholder="AIzaSy..." oninput="saveKey('gemini', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-10 py-2 text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                                <button onclick="toggleKeyVisibility('gemini-key-input')" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
 
-// ══════════════════════════════════════
-// FILE DOWNLOAD UTILITY
-// ══════════════════════════════════════
-function downloadFile(content, filename, type) {
-  const blob = new Blob([content], { type: type || 'text/plain' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename;
-  document.body.appendChild(a); a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
+                        <div id="claude-key-container" class="space-y-1.5 hidden">
+                            <label class="flex justify-between items-center text-xs text-slate-400 font-medium">
+                                <span>Claude API Key</span>
+                                <a href="https://console.anthropic.com/" target="_blank" class="text-[10px] text-sky-400 hover:underline flex items-center gap-1">Get Key <i data-lucide="external-link" class="w-2.5 h-2.5"></i></a>
+                            </label>
+                            <div class="relative">
+                                <input type="password" id="claude-key-input" placeholder="sk-ant-..." oninput="saveKey('claude', this.value)" class="w-full bg-slate-950 border border-slate-800 rounded-lg pl-3 pr-10 py-2 text-sm font-mono text-slate-200 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-sky-500">
+                                <button onclick="toggleKeyVisibility('claude-key-input')" class="absolute right-3 top-2.5 text-slate-500 hover:text-slate-300">
+                                    <i data-lucide="eye" class="w-4 h-4"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-// ══════════════════════════════════════
-// AUTO-SAVE FROM URL
-// ══════════════════════════════════════
-function processAutoSaveLink() {
-  const params = new URLSearchParams(window.location.search);
-  const data = params.get('autosave');
-  if (!data) return;
+            <!-- Sidebar Footer Status -->
+            <div class="p-4 border-t border-slate-800 bg-slate-950/50 flex flex-col gap-2">
+                <div class="flex items-center gap-3 px-2">
+                    <div id="connection-indicator" class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
+                    <span id="connection-status-text" class="text-xs text-slate-400 font-medium">Setup API Key to connect</span>
+                </div>
+                <button onclick="clearAllData()" class="w-full py-1.5 px-3 rounded-lg text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10 transition-colors border border-transparent hover:border-red-500/20">
+                    Clear Current Chat History
+                </button>
+            </div>
+        </aside>
 
-  try {
-    const decoded = JSON.parse(decodeURIComponent(atob(data)));
-    if (!decoded.project || !decoded.text) return;
-    pendingAutoSave = decoded;
-    document.getElementById('autoProjectLabel').textContent = '📂 ' + decoded.project;
-    document.getElementById('autoPreview').textContent = decoded.text.slice(0, 200) + (decoded.text.length > 200 ? '...' : '');
-    document.getElementById('autoSaveCard').classList.add('show');
-    log('Auto-save link detected', 'info');
-    if (window.history?.replaceState) {
-      window.history.replaceState({}, document.title, window.location.origin + window.location.pathname);
-    }
-  } catch(e) { log('Invalid auto-save link', 'err'); }
-}
+        <!-- Sidebar overlay for mobile view -->
+        <div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm hidden md:hidden"></div>
 
-function downloadAutoSave() {
-  if (!pendingAutoSave) return;
-  const now = new Date();
-  const content = `# ${pendingAutoSave.project} — Conversation\n\n**Saved:** ${now.toLocaleString()}\n\n---\n\n${pendingAutoSave.text}`;
-  const filename = `${pendingAutoSave.project}-${now.toISOString().replace(/[:.]/g,'-').slice(0,19)}.md`;
-  downloadFile(content, filename, 'text/markdown');
-  toast('✅ Saved: ' + filename, 'success');
-  log('Auto-save downloaded: ' + filename, 'ok');
-  document.getElementById('autoSaveCard').classList.remove('show');
-  pendingAutoSave = null;
-}
+        <!-- Main Chat Area -->
+        <main class="flex-1 flex flex-col min-w-0 bg-slate-950 relative">
+            <!-- Header -->
+            <header class="h-16 px-4 md:px-6 flex items-center justify-between border-b border-slate-900 bg-slate-950/80 backdrop-blur-md sticky top-0 z-30">
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleSidebar()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 md:hidden">
+                        <i data-lucide="menu" class="w-5 h-5"></i>
+                    </button>
+                    <div>
+                        <h2 id="current-project-title" class="font-semibold text-slate-100 flex items-center gap-2">
+                            <!-- Injected dynamically -->
+                        </h2>
+                        <p id="current-project-desc" class="text-[11px] text-slate-500 hidden sm:block">
+                            <!-- Injected dynamically -->
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="clearCurrentChat()" class="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-900 transition-colors" title="Clear chat window">
+                        <i data-lucide="trash-2" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </header>
 
-// ══════════════════════════════════════
-// SHARE-TO-SAVE
-// ══════════════════════════════════════
-function processSharedText() {
-  const params = new URLSearchParams(window.location.search);
-  const sharedTitle = params.get('title');
-  const sharedText = params.get('text');
-  const sharedUrl = params.get('url');
+            <!-- Chat Message Window -->
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+                <!-- Welcome UI or Chat conversation will live here -->
+            </div>
 
-  let combined = [sharedTitle, sharedText, sharedUrl].filter(Boolean).join('\n\n').trim();
-  if (!combined) return;
+            <!-- Chat Feedback Warning Block (Persistent but non-intrusive banner if key missing) -->
+            <div id="key-warning-banner" class="mx-4 md:mx-6 mb-2 hidden">
+                <div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 flex items-center justify-between gap-3 text-amber-200 text-xs">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="alert-triangle" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                        <span>No API Key configured. Please enter your provider key in the sidebar to send messages.</span>
+                    </div>
+                </div>
+            </div>
 
-  pendingShareText = combined;
-  document.getElementById('sharePreview').textContent = combined.slice(0, 200) + (combined.length > 200 ? '...' : '');
-  document.getElementById('shareCard').classList.add('show');
-  log('Shared content received', 'info');
-}
+            <!-- Input Form Box -->
+            <div class="p-4 md:p-6 bg-slate-950 border-t border-slate-900">
+                <div class="max-w-4xl mx-auto">
+                    <form id="chat-form" onsubmit="handleSendMessage(event)" class="relative bg-slate-900 border border-slate-800 rounded-2xl p-2 focus-within:ring-1 focus-within:ring-sky-500 focus-within:border-sky-500 transition-all shadow-xl">
+                        <textarea 
+                            id="message-input" 
+                            rows="1" 
+                            placeholder="Ask me anything..." 
+                            class="w-full bg-transparent border-0 resize-none outline-none focus:ring-0 text-slate-100 placeholder-slate-500 px-3 py-2 text-sm max-h-48 overflow-y-auto"
+                            onkeydown="handleKeyDown(event)"
+                        ></textarea>
+                        
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800/60 px-2 mt-1">
+                            <div class="flex items-center gap-1 text-slate-400">
+                                <span class="text-[11px] px-2 py-1 rounded bg-slate-950 border border-slate-800 text-slate-400 font-mono select-none" id="provider-badge">
+                                    Gemini 2.5
+                                </span>
+                            </div>
+                            <button type="submit" id="send-button" class="bg-sky-500 hover:bg-sky-600 text-white p-2 rounded-xl transition-all shadow-lg shadow-sky-500/10 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                                <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </form>
+                    <p class="text-center text-[10px] text-slate-600 mt-2.5">
+                        Your keys are kept isolated inside your browser's private session.
+                    </p>
+                </div>
+            </div>
+        </main>
+    </div>
 
-function downloadShared() {
-  if (!pendingShareText) return;
-  const project = document.getElementById('shareProject').value.trim() || 'general';
-  const now = new Date();
-  const content = `# ${project} — Shared Content\n\n**Saved:** ${now.toLocaleString()}\n\n---\n\n${pendingShareText}`;
-  const filename = `shared-${now.toISOString().replace(/[:.]/g,'-').slice(0,19)}.md`;
-  downloadFile(content, filename, 'text/markdown');
-  toast('✅ Saved: ' + filename, 'success');
-  log('Shared content saved: ' + filename, 'ok');
-  document.getElementById('shareCard').classList.remove('show');
-  pendingShareText = null;
-}
+    <!-- Core App Logic -->
+    <script>
+        // Projects Schema definition
+        const PROJECTS = {
+            general: {
+                id: 'general',
+                name: 'Meshmesh Assistant',
+                desc: 'General purpose workspace for conversational tasks.',
+                icon: 'bot',
+                systemPrompt: 'You are Meshmesh Assistant, a helpful and knowledgeable AI companion designed to provide direct, clear, and highly practical assistance.'
+            },
+            gahiz: {
+                id: 'gahiz',
+                name: 'Gahiz',
+                desc: 'Business strategy & e-commerce intelligence system.',
+                icon: 'briefcase',
+                systemPrompt: 'You are Gahiz (جاهز), a strategic business, product, and e-commerce consultant. Help the user build highly tailored strategies, formulate tactical expansion schemes, refine supply chains, and design market entrance matrices. Prioritize deep local and global commercial realities, offering concrete steps and data-driven insights. Communicate fluently in Arabic or English, aligned perfectly with the user\'s tone.'
+            },
+            content_factory: {
+                id: 'content_factory',
+                name: 'Content Factory',
+                desc: 'High-speed editorial strategy and marketing automation copywriting.',
+                icon: 'factory',
+                systemPrompt: 'You are Content Factory, an elite social copywriter, viral media designer, and persuasive editor. Your task is to turn thoughts into absolute high-performing posts (LinkedIn, Threads, Newsletter). Use frameworks like AIDA or PAS when appropriate. Write copy that captures reader attention inside the first 3 seconds. Focus on rhythm, structure, and emotional hooks.'
+            },
+            wired_leader: {
+                id: 'wired_leader',
+                name: 'Wired Leader',
+                desc: 'Executive speech coach and corporate correspondence architecture.',
+                icon: 'shield-alert',
+                systemPrompt: 'You are Wired Leader, an executive speech trainer, senior diplomat, and organizational psychologist. Your job is to advise leaders on high-stakes crisis management, design premium strategic communications, and edit corporate emails for absolute authority, tact, and maximum impact. Provide precise structural adjustments to verbal and written communications.'
+            }
+        };
 
-// ══════════════════════════════════════
-// MISSION FROM URL
-// ══════════════════════════════════════
-function checkMissionLink() {
-  const params = new URLSearchParams(window.location.search);
-  const missionData = params.get('mission');
-  if (!missionData) return;
-  try {
-    const decoded = JSON.parse(decodeURIComponent(atob(missionData)));
-    document.getElementById('missionInput').value = JSON.stringify(decoded, null, 2);
-    switchTab('mission');
-    log('Mission loaded from URL', 'info');
-  } catch(e) {}
-}
+        // State initialization
+        let activeProject = 'general';
+        let conversations = JSON.parse(sessionStorage.getItem('meshmesh_chats')) || {};
+        let activeProvider = sessionStorage.getItem('meshmesh_provider') || 'gemini';
 
-// ══════════════════════════════════════
-// STARTUP
-// ══════════════════════════════════════
-(function init() {
-  loadProxySettings();
-  checkMissionLink();
-  processAutoSaveLink();
-  processSharedText();
-  log('Mission Runner v7.0 ready ✅', 'ok');
-})();
-</script>
+        // Auto-initialize conversation arrays
+        Object.keys(PROJECTS).forEach(pKey => {
+            if (!conversations[pKey]) {
+                conversations[pKey] = [];
+            }
+        });
+
+        // Toggle Key Input Type (Show/Hide Secret)
+        function toggleKeyVisibility(id) {
+            const input = document.getElementById(id);
+            if (input.type === 'password') {
+                input.type = 'text';
+            } else {
+                input.type = 'password';
+            }
+        }
+
+        // Toggle mobile sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebar-overlay');
+            sidebar.classList.toggle('-translate-x-full');
+            overlay.classList.toggle('hidden');
+        }
+
+        // Initialize state indicators
+        function updateConnectionIndicator() {
+            const provider = document.getElementById('api-provider').value;
+            const key = sessionStorage.getItem(`meshmesh_key_${provider}`);
+            const indicator = document.getElementById('connection-indicator');
+            const statusText = document.getElementById('connection-status-text');
+            const warningBanner = document.getElementById('key-warning-banner');
+
+            if (key && key.trim().length > 0) {
+                indicator.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                statusText.innerText = `${provider.toUpperCase()} Key Active`;
+                warningBanner.classList.add('hidden');
+            } else {
+                indicator.className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+                statusText.innerText = "Setup API Key to connect";
+                warningBanner.classList.remove('hidden');
+            }
+        }
+
+        // Switch Engine Provider
+        function switchProvider(provider) {
+            activeProvider = provider;
+            sessionStorage.setItem('meshmesh_provider', provider);
+            
+            document.getElementById('gemini-key-container').classList.add('hidden');
+            document.getElementById('claude-key-container').classList.add('hidden');
+            
+            if (provider === 'gemini') {
+                document.getElementById('gemini-key-container').classList.remove('hidden');
+                document.getElementById('provider-badge').innerText = 'Gemini 2.5';
+            } else if (provider === 'claude') {
+                document.getElementById('claude-key-container').classList.remove('hidden');
+                document.getElementById('provider-badge').innerText = 'Claude 3.5';
+            }
+            updateConnectionIndicator();
+        }
+
+        // Save keys inside temporary sessionStorage sandbox
+        function saveKey(provider, val) {
+            sessionStorage.setItem(`meshmesh_key_${provider}`, val.trim());
+            updateConnectionIndicator();
+        }
+
+        // Load keys back on startup
+        function loadSavedKeys() {
+            const geminiKey = sessionStorage.getItem('meshmesh_key_gemini') || '';
+            const claudeKey = sessionStorage.getItem('meshmesh_key_claude') || '';
+            
+            document.getElementById('gemini-key-input').value = geminiKey;
+            document.getElementById('claude-key-input').value = claudeKey;
+            document.getElementById('api-provider').value = activeProvider;
+            
+            switchProvider(activeProvider);
+        }
+
+        // Build Project Sidebar list
+        function renderProjectSidebar() {
+            const listContainer = document.getElementById('project-list');
+            listContainer.innerHTML = '';
+
+            Object.values(PROJECTS).forEach(p => {
+                const isActive = p.id === activeProject;
+                const activeClasses = isActive 
+                    ? 'bg-sky-500/10 text-sky-400 border-sky-500/20' 
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-slate-200 border-transparent';
+
+                const btn = document.createElement('button');
+                btn.className = `w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium border transition-all ${activeClasses}`;
+                btn.onclick = () => selectProject(p.id);
+                btn.innerHTML = `
+                    <div class="p-1.5 rounded-lg ${isActive ? 'bg-sky-500/15 text-sky-400' : 'bg-slate-950 text-slate-500'}">
+                        <i data-lucide="${p.icon}" class="w-4 h-4"></i>
+                    </div>
+                    <div class="text-left flex-1 min-w-0">
+                        <p class="truncate font-semibold text-xs text-slate-200">${p.name}</p>
+                        <p class="truncate text-[10px] text-slate-500">${p.desc}</p>
+                    </div>
+                `;
+                listContainer.appendChild(btn);
+            });
+            lucide.createIcons();
+        }
+
+        // Change workspace project
+        function selectProject(projectId) {
+            activeProject = projectId;
+            const proj = PROJECTS[projectId];
+            
+            document.getElementById('current-project-title').innerHTML = `
+                <i data-lucide="${proj.icon}" class="w-5 h-5 text-sky-400"></i>
+                <span>${proj.name}</span>
+            `;
+            document.getElementById('current-project-desc').innerText = proj.desc;
+            
+            renderProjectSidebar();
+            renderChatHistory();
+            
+            // On mobile devices auto-close sidebar
+            if (window.innerWidth < 768) {
+                toggleSidebar();
+            }
+        }
+
+        // Print chat messages inside panel window
+        function renderChatHistory() {
+            const container = document.getElementById('chat-messages');
+            const messages = conversations[activeProject] || [];
+            
+            if (messages.length === 0) {
+                // Render gorgeous Empty State Greeting
+                const proj = PROJECTS[activeProject];
+                container.innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center max-w-xl mx-auto text-center py-12 px-4">
+                        <div class="w-16 h-16 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 shadow-xl text-sky-400">
+                            <i data-lucide="${proj.icon}" class="w-8 h-8"></i>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-100 mb-2">Welcome to ${proj.name}</h3>
+                        <p class="text-sm text-slate-400 leading-relaxed">${proj.desc}</p>
+                        <div class="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+                            <button onclick="useQuickPrompt('Provide a breakdown of standard operational procedures for this module.')" class="text-left p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all text-xs text-slate-300">
+                                <p class="font-medium text-slate-200 mb-1">Get Started</p>
+                                <p class="text-slate-500">Provide a breakdown of standard procedures.</p>
+                            </button>
+                            <button onclick="useQuickPrompt('What are the key priorities to set up first when utilizing this assistant?')" class="text-left p-3 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/50 transition-all text-xs text-slate-300">
+                                <p class="font-medium text-slate-200 mb-1">Key Priorities</p>
+                                <p class="text-slate-500">What are the essential priorities to focus on?</p>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = '';
+                messages.forEach((msg, idx) => {
+                    const isUser = msg.role === 'user';
+                    const wrapper = document.createElement('div');
+                    wrapper.className = `flex ${isUser ? 'justify-end' : 'justify-start'} w-full`;
+                    
+                    const bubble = document.createElement('div');
+                    bubble.className = `max-w-[85%] sm:max-w-2xl rounded-2xl p-4 text-sm shadow-md transition-all ${
+                        isUser 
+                        ? 'bg-sky-600 text-white rounded-tr-none' 
+                        : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-tl-none'
+                    }`;
+
+                    // Transform simple markdown paragraphs/newlines for neat structure
+                    const formattedText = formatMessageContent(msg.text);
+                    bubble.innerHTML = `
+                        <div class="prose prose-invert prose-sm max-w-none text-[13px] sm:text-sm leading-relaxed whitespace-pre-line">
+                            ${formattedText}
+                        </div>
+                        <div class="text-[10px] mt-2 select-none ${isUser ? 'text-sky-200 text-right' : 'text-slate-500'}">
+                            ${msg.timestamp}
+                        </div>
+                    `;
+                    
+                    wrapper.appendChild(bubble);
+                    container.appendChild(wrapper);
+                });
+            }
+            container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
+        }
+
+        // Quick prompt click injection
+        function useQuickPrompt(text) {
+            document.getElementById('message-input').value = text;
+            document.getElementById('message-input').focus();
+        }
+
+        // Simple Markdown formatter to render code blocks and line breaks cleanly
+        function formatMessageContent(text) {
+            // Escape html tags to avoid raw injection issues
+            let escaped = text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+
+            // Match code blocks ``` ... ```
+            const codeBlockRegex = /```([\s\S]*?)```/g;
+            escaped = escaped.replace(codeBlockRegex, (match, code) => {
+                return `<pre class="bg-slate-950 border border-slate-800 rounded-xl p-3 my-2 text-xs font-mono text-slate-300 overflow-x-auto select-all">${code.trim()}</pre>`;
+            });
+
+            // Match inline code `...`
+            escaped = escaped.replace(/`([^`\n]+)`/g, '<code class="bg-slate-950 px-1.5 py-0.5 rounded text-xs font-mono text-sky-400">$1</code>');
+
+            return escaped;
+        }
+
+        // Exponential backoff executor for secure API direct execution
+        async function fetchWithBackoff(url, options, maxRetries = 5) {
+            let delay = 1000;
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) {
+                        return response;
+                    }
+                    if (response.status !== 429 && response.status < 500) {
+                        // Return errors early (like authentication/key issues)
+                        return response;
+                    }
+                } catch (err) {
+                    if (i === maxRetries - 1) throw err;
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2; // Exponential expansion
+            }
+            throw new Error("Failed after maximum exponential retries.");
+        }
+
+        // Direct Core API Calling Pipeline
+        async function executeAiGeneration(userQuery, systemPrompt) {
+            const provider = activeProvider;
+            const key = sessionStorage.getItem(`meshmesh_key_${provider}`);
+
+            if (!key || key.trim() === '') {
+                throw new Error("API Key is missing. Check your settings in the sidebar.");
+            }
+
+            if (provider === 'gemini') {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${key}`;
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                };
+
+                const res = await fetchWithBackoff(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error?.message || "Google API returned an error status.");
+                }
+
+                const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!responseText) throw new Error("Empty response received from Gemini engine.");
+                return responseText;
+            } else if (provider === 'claude') {
+                // Client-side execution of Anthropic Claude. Note: Direct browser connection requires proper handling or bypass of CORS.
+                const url = 'https://api.anthropic.com/v1/messages';
+                const payload = {
+                    model: "claude-3-5-sonnet-20241022",
+                    max_tokens: 4000,
+                    system: systemPrompt,
+                    messages: [
+                        { role: "user", content: userQuery }
+                    ]
+                };
+
+                const res = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'x-api-key': key,
+                        'anthropic-version': '2023-06-01',
+                        'content-type': 'application/json',
+                        'anthropic-dangerous-direct-profiles-allowed': 'true' // Bypass built-in SDK console safeguards
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error?.message || "Anthropic API returned an error.");
+                }
+
+                const responseText = data.content?.[0]?.text;
+                if (!responseText) throw new Error("Empty response received from Claude engine.");
+                return responseText;
+            }
+        }
+
+        // Handle Send message event
+        async function handleSendMessage(event) {
+            if (event) event.preventDefault();
+            
+            const inputElement = document.getElementById('message-input');
+            const sendBtn = document.getElementById('send-button');
+            const query = inputElement.value.trim();
+            
+            if (!query) return;
+
+            // Block execution if no key is entered
+            const providerKey = sessionStorage.getItem(`meshmesh_key_${activeProvider}`);
+            if (!providerKey) {
+                document.getElementById('key-warning-banner').classList.remove('hidden');
+                return;
+            }
+
+            // Lock Input Panel
+            inputElement.value = '';
+            inputElement.disabled = true;
+            sendBtn.disabled = true;
+
+            const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Push User Message
+            conversations[activeProject].push({
+                role: 'user',
+                text: query,
+                timestamp: timestamp
+            });
+            renderChatHistory();
+
+            // Inject Custom Temporary Loading Response State
+            const container = document.getElementById('chat-messages');
+            const loadingWrapper = document.createElement('div');
+            loadingWrapper.id = 'meshmesh-loading-indicator';
+            loadingWrapper.className = 'flex justify-start w-full';
+            loadingWrapper.innerHTML = `
+                <div class="max-w-[85%] sm:max-w-2xl rounded-2xl p-4 bg-slate-900 border border-slate-800 text-slate-400 rounded-tl-none">
+                    <div class="flex items-center gap-2">
+                        <div class="flex space-x-1.5">
+                            <div class="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                            <div class="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                            <div class="w-2 h-2 bg-slate-500 rounded-full animate-bounce" style="animation-delay: 0.3s"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 ml-1 font-mono">Meshmesh is processing...</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(loadingWrapper);
+            container.scrollTop = container.scrollHeight;
+
+            try {
+                const systemPrompt = PROJECTS[activeProject].systemPrompt;
+                const assistantResponse = await executeAiGeneration(query, systemPrompt);
+                
+                // Clear loading state
+                const currentIndicator = document.getElementById('meshmesh-loading-indicator');
+                if (currentIndicator) currentIndicator.remove();
+
+                // Append real assistant payload
+                conversations[activeProject].push({
+                    role: 'assistant',
+                    text: assistantResponse,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                });
+
+                // Commit history to sessionStorage for device sandboxing persistence
+                sessionStorage.setItem('meshmesh_chats', JSON.stringify(conversations));
+
+            } catch (err) {
+                console.error(err);
+                const currentIndicator = document.getElementById('meshmesh-loading-indicator');
+                if (currentIndicator) currentIndicator.remove();
+
+                // Inject beautiful error notification bubble inside chat
+                conversations[activeProject].push({
+                    role: 'assistant',
+                    text: `❌ Error encountered during processing:\n\n${err.message}\n\nPlease check your API key, ensure you have sufficient balance/quota, and make sure network configuration supports standard API requests.`,
+                    timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                });
+            } finally {
+                // Restore Input Panel state
+                inputElement.disabled = false;
+                sendBtn.disabled = false;
+                renderChatHistory();
+                inputElement.focus();
+            }
+        }
+
+        // Watch for enter key within message textarea
+        function handleKeyDown(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                handleSendMessage();
+            }
+        }
+
+        // Clear only the currently selected workspace's local state
+        function clearCurrentChat() {
+            conversations[activeProject] = [];
+            sessionStorage.setItem('meshmesh_chats', JSON.stringify(conversations));
+            renderChatHistory();
+        }
+
+        // Delete completely all chat files
+        function clearAllData() {
+            Object.keys(conversations).forEach(k => {
+                conversations[k] = [];
+            });
+            sessionStorage.setItem('meshmesh_chats', JSON.stringify(conversations));
+            renderChatHistory();
+        }
+
+        // Window load routines
+        window.addEventListener('load', () => {
+            loadSavedKeys();
+            selectProject(activeProject);
+            updateConnectionIndicator();
+        });
+    </script>
 </body>
 </html>
+
+```
