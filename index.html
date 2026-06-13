@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Mission Runner — Ahmed's AI Execution Layer</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Tesseract.js for OCR (lazy loaded) -->
+    <script src="https://unpkg.com/tesseract.js@5/dist/tesseract.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        surface: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            200: '#e2e8f0',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                            950: '#020617',
+                        },
+                        accent: {
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        * { -webkit-tap-highlight-color: transparent; }
+        body { overscroll-behavior: none; }
+        .scrollbar-thin::-webkit-scrollbar { width: 4px; }
+        .scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slideUp { animation: slideUp 0.3s ease-out; }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .animate-pulse-dot { animation: pulse-dot 2s ease-in-out infinite; }
+        
+        /* Toast container */
+        #toast-container {
+            position: fixed;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+            width: 90%;
+            max-width: 400px;
+        }
+        .toast {
+            pointer-events: auto;
+            animation: slideUp 0.3s ease-out;
+        }
+    </style>
+</head>
+<body class="h-full bg-surface-950 text-slate-100 font-sans antialiased overflow-hidden">
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Auto-Save Banner (hidden by default) -->
+    <div id="autosave-banner" class="hidden fixed top-0 left-0 right-0 z-50 bg-emerald-600 px-4 py-3 shadow-lg">
+        <div class="flex items-center justify-between max-w-lg mx-auto">
+            <div class="flex items-center gap-2">
+                <i data-lucide="download" class="w-4 h-4 text-white"></i>
+                <span class="text-xs font-bold text-white">Auto-Save Ready</span>
+            </div>
+            <button onclick="saveAutoSaveContent()" class="bg-white text-emerald-700 text-[11px] font-bold px-3 py-1.5 rounded-lg">
+                Save Now
+            </button>
+        </div>
+    </div>
+
+    <!-- Share Target Banner -->
+    <div id="share-banner" class="hidden fixed top-0 left-0 right-0 z-50 bg-blue-600 px-4 py-3 shadow-lg">
+        <div class="flex items-center justify-between max-w-lg mx-auto">
+            <div class="flex items-center gap-2">
+                <i data-lucide="share2" class="w-4 h-4 text-white"></i>
+                <span class="text-xs font-bold text-white">Shared Content Received</span>
+            </div>
+            <button onclick="saveSharedContent()" class="bg-white text-blue-700 text-[11px] font-bold px-3 py-1.5 rounded-lg">
+                Save
+            </button>
+        </div>
+    </div>
+
+    <!-- Main App Shell -->
+    <div class="flex flex-col h-full">
+        
+        <!-- Top Bar -->
+        <header class="flex-shrink-0 px-4 py-3 flex items-center justify-between border-b border-slate-800 bg-surface-900">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-accent-600 flex items-center justify-center">
+                    <i data-lucide="zap" class="w-4 h-4 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-bold text-white">Mission Runner</h1>
+                    <div class="flex items-center gap-1.5">
+                        <div id="connection-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot"></div>
+                        <span id="connection-label" class="text-[10px] text-slate-400 font-mono">No Key</span>
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <!-- Active Project Badge -->
+                <select id="project-selector" onchange="switchProject(this.value)" class="bg-slate-800 border border-slate-700 text-slate-200 text-[10px] font-bold px-2 py-1.5 rounded-lg outline-none">
+                    <option value="general">🟢 Mission Control</option>
+                    <option value="gahiz">📋 Gahiz (جاهز)</option>
+                    <option value="content_factory">🏭 Content Factory</option>
+                    <option value="wired_leader">🛡️ Wired Leader</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Tab Bar -->
+        <nav class="flex-shrink-0 flex border-b border-slate-800 bg-surface-900">
+            <button onclick="switchTab('agent')" id="tab-agent" class="flex-1 py-3 text-[10px] font-bold text-center border-b-2 border-accent-500 text-white transition-colors">
+                🤖 Agent
+            </button>
+            <button onclick="switchTab('mission')" id="tab-mission" class="flex-1 py-3 text-[10px] font-bold text-center border-b-2 border-transparent text-slate-500 transition-colors">
+                📁 Mission
+            </button>
+            <button onclick="switchTab('capture')" id="tab-capture" class="flex-1 py-3 text-[10px] font-bold text-center border-b-2 border-transparent text-slate-500 transition-colors">
+                💾 Capture
+            </button>
+            <button onclick="switchTab('settings')" id="tab-settings" class="flex-1 py-3 text-[10px] font-bold text-center border-b-2 border-transparent text-slate-500 transition-colors">
+                ⚙️ Settings
+            </button>
+        </nav>
+
+        <!-- Content Area -->
+        <main class="flex-1 overflow-hidden">
+            
+            <!-- TAB: AGENT -->
+            <div id="view-agent" class="h-full flex flex-col">
+                <!-- System Order Reference Card (collapsible) -->
+                <details class="flex-shrink-0 mx-4 mt-3 bg-slate-800/50 border border-slate-700 rounded-xl overflow-hidden">
+                    <summary class="px-4 py-2.5 text-[10px] font-bold text-slate-400 cursor-pointer flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-3 h-3"></i> System Order Protocol — Copy & Paste to Any AI
+                    </summary>
+                    <div class="px-4 pb-3">
+                        <textarea id="system-order-snippet" readonly rows="4" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-[10px] font-mono text-slate-300 leading-relaxed resize-none select-all"></textarea>
+                        <button onclick="copySystemOrder()" class="mt-2 w-full py-1.5 bg-slate-700 hover:bg-slate-600 text-[10px] font-bold text-white rounded-lg transition-colors">
+                            📋 Copy System Order
+                        </button>
+                    </div>
+                </details>
+
+                <!-- Chat Messages -->
+                <div id="chat-messages" class="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin">
+                    <div class="text-center py-12">
+                        <i data-lucide="message-square" class="w-10 h-10 text-slate-700 mx-auto mb-3"></i>
+                        <p class="text-xs text-slate-500 font-mono">Paste AI output or ask a question</p>
+                        <p class="text-[10px] text-slate-600 mt-1">Active: <span id="active-model-name" class="text-accent-500">Gemini 2.5 Flash</span></p>
+                    </div>
+                </div>
+
+                <!-- Chat Input -->
+                <div class="flex-shrink-0 px-4 py-3 border-t border-slate-800 bg-surface-900">
+                    <form onsubmit="handleSendMessage(event)" class="flex items-end gap-2">
+                        <textarea id="message-input" rows="1" placeholder="Type or paste AI instructions..." 
+                            class="flex-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 text-xs text-white placeholder-slate-500 resize-none outline-none focus:border-accent-500 max-h-32"
+                            onkeydown="handleKeyDown(event)"
+                            oninput="this.style.height='auto'; this.style.height=Math.min(this.scrollHeight,128)+'px'"></textarea>
+                        <button type="submit" id="send-btn" class="flex-shrink-0 bg-accent-600 hover:bg-accent-700 text-white p-2.5 rounded-xl transition-colors disabled:opacity-40" disabled>
+                            <i data-lucide="arrow-up" class="w-4 h-4"></i>
+                        </button>
+                    </form>
+                    <!-- Step Extractor Quick Actions -->
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="pasteFromClipboard()" class="flex-1 py-1.5 bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-bold rounded-lg hover:bg-slate-700 transition-colors">
+                            📋 Paste
+                        </button>
+                        <button onclick="triggerOfflineExtraction()" class="flex-1 py-1.5 bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-bold rounded-lg hover:bg-slate-700 transition-colors">
+                            ✂️ Extract Steps
+                        </button>
+                        <button onclick="scanWithCamera()" class="flex-1 py-1.5 bg-slate-800 border border-slate-700 text-[10px] text-slate-300 font-bold rounded-lg hover:bg-slate-700 transition-colors">
+                            📸 Scan
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: MISSION -->
+            <div id="view-mission" class="h-full overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin hidden">
+                <!-- Mission JSON Input -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-white">Mission Executor</h3>
+                        <span id="json-status" class="text-[9px] font-mono text-slate-500">Ready</span>
+                    </div>
+                    <textarea id="mission-json-input" rows="8" 
+                        placeholder='Paste mission-json block here...&#10;&#10;{&#10;  "project": "my-site",&#10;  "files": [&#10;    { "path": "index.html", "content": "..." }&#10;  ]&#10;}'
+                        oninput="validateMissionJson(this.value)"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-mono text-[11px] text-slate-200 placeholder-slate-600 resize-none outline-none focus:border-accent-500"></textarea>
+                    
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loadDemoMission()" class="px-3 py-1.5 bg-slate-700 text-[10px] text-slate-300 rounded-lg font-bold hover:bg-slate-600 transition-colors">Demo</button>
+                        <button onclick="document.getElementById('mission-json-input').value=''" class="px-3 py-1.5 bg-slate-700 text-[10px] text-slate-300 rounded-lg font-bold hover:bg-slate-600 transition-colors">Clear</button>
+                        <div class="flex-1"></div>
+                        <button id="save-local-btn" onclick="executeMissionLocally()" disabled class="px-3 py-1.5 bg-emerald-600 text-[10px] text-white rounded-lg font-bold hover:bg-emerald-700 disabled:opacity-40 transition-colors">
+                            💾 Save to Device
+                        </button>
+                        <button id="deploy-cloud-btn" onclick="deployMissionToCloud()" disabled class="px-3 py-1.5 bg-accent-600 text-[10px] text-white rounded-lg font-bold hover:bg-accent-700 disabled:opacity-40 transition-colors">
+                            ☁️ Cloud Deploy
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Extracted Steps -->
+                <div id="steps-panel" class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3 hidden">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-white">Action Steps</h3>
+                        <span id="step-count" class="text-[9px] font-mono text-accent-400">0 steps</span>
+                    </div>
+                    <div id="steps-container" class="space-y-2 max-h-64 overflow-y-auto scrollbar-thin"></div>
+                    <button id="run-all-btn" onclick="executeAllSteps()" class="w-full py-2 bg-accent-600 text-[10px] text-white rounded-lg font-bold hover:bg-accent-700 transition-colors">
+                        ▶️ Execute All
+                    </button>
+                </div>
+
+                <!-- How It Works (collapsible) -->
+                <details class="bg-slate-800/30 border border-slate-700/50 rounded-xl overflow-hidden">
+                    <summary class="px-4 py-2.5 text-[10px] font-bold text-slate-500 cursor-pointer">ℹ️ How Mission Executor Works</summary>
+                    <div class="px-4 pb-3 text-[10px] text-slate-500 leading-relaxed space-y-1">
+                        <p><strong>Android (Chrome):</strong> Opens folder picker → creates all files in one go</p>
+                        <p><strong>iOS / Other:</strong> Downloads each file individually</p>
+                        <p><strong>Cloud Deploy:</strong> Sends to GitHub Actions → deploys to GitHub Pages</p>
+                    </div>
+                </details>
+            </div>
+
+            <!-- TAB: CAPTURE -->
+            <div id="view-capture" class="h-full overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin hidden">
+                <!-- Manual Capture -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <h3 class="text-xs font-bold text-white">Capture Conversation</h3>
+                    <div>
+                        <label class="text-[10px] text-slate-400 font-bold">Project Name</label>
+                        <input type="text" id="capture-project" placeholder="e.g., gahiz-landing" 
+                            class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 outline-none focus:border-accent-500">
+                    </div>
+                    <textarea id="capture-content" rows="8" placeholder="Paste full conversation here..."
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 font-mono text-[11px] text-slate-200 placeholder-slate-600 resize-none outline-none focus:border-accent-500"></textarea>
+                    <button onclick="saveManualCapture()" class="w-full py-2 bg-emerald-600 text-[10px] text-white rounded-lg font-bold hover:bg-emerald-700 transition-colors">
+                        📥 Download as .md
+                    </button>
+                </div>
+
+                <!-- Quick Note -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <h3 class="text-xs font-bold text-white">Quick Note</h3>
+                    <textarea id="quick-note" rows="4" placeholder="Jot something down..."
+                        class="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-xs text-white placeholder-slate-600 resize-none outline-none focus:border-accent-500"></textarea>
+                    <button onclick="saveQuickNote()" class="w-full py-2 bg-slate-700 text-[10px] text-slate-300 rounded-lg font-bold hover:bg-slate-600 transition-colors">
+                        💾 Save Note
+                    </button>
+                </div>
+            </div>
+
+            <!-- TAB: SETTINGS -->
+            <div id="view-settings" class="h-full overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin hidden">
+                <!-- API Keys -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <h3 class="text-xs font-bold text-white">AI Provider Keys</h3>
+                    
+                    <!-- Provider Selector -->
+                    <div>
+                        <label class="text-[10px] text-slate-400 font-bold">Active Provider</label>
+                        <select id="provider-select" onchange="switchProvider(this.value)" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent-500">
+                            <option value="gemini">Google Gemini</option>
+                            <option value="claude">Anthropic Claude</option>
+                        </select>
+                    </div>
+
+                    <!-- Gemini Settings -->
+                    <div id="gemini-settings" class="space-y-2">
+                        <div>
+                            <label class="text-[10px] text-slate-400 font-bold">Gemini API Key</label>
+                            <input type="password" id="gemini-key" placeholder="AIzaSy..." 
+                                oninput="saveKey('gemini', this.value)"
+                                class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-white placeholder-slate-600 outline-none focus:border-accent-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 font-bold">Model</label>
+                            <select id="gemini-model" onchange="saveModel('gemini', this.value)" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent-500">
+                                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast)</option>
+                                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Smart)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Claude Settings -->
+                    <div id="claude-settings" class="space-y-2 hidden">
+                        <div>
+                            <label class="text-[10px] text-slate-400 font-bold">Claude API Key</label>
+                            <input type="password" id="claude-key" placeholder="sk-ant-..." 
+                                oninput="saveKey('claude', this.value)"
+                                class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-white placeholder-slate-600 outline-none focus:border-accent-500">
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-400 font-bold">Model</label>
+                            <select id="claude-model" onchange="saveModel('claude', this.value)" class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white outline-none focus:border-accent-500">
+                                <option value="claude-sonnet-4-20250514">Claude Sonnet 4</option>
+                                <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GitHub Cloud Brain -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <h3 class="text-xs font-bold text-white">☁️ GitHub Cloud Brain</h3>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">Required for remote deployments. Create a <a href="https://github.com/settings/tokens" target="_blank" class="text-accent-500 underline">fine-grained PAT</a> with <code class="bg-slate-700 px-1 rounded">actions:write</code> scope.</p>
+                    <div>
+                        <label class="text-[10px] text-slate-400 font-bold">GitHub PAT</label>
+                        <input type="password" id="github-token" placeholder="github_pat_..." 
+                            oninput="saveGitHubToken(this.value)"
+                            class="w-full mt-1 bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs font-mono text-white placeholder-slate-600 outline-none focus:border-accent-500">
+                    </div>
+                    <button onclick="testGitHubConnection()" class="w-full py-2 bg-slate-700 text-[10px] text-slate-300 rounded-lg font-bold hover:bg-slate-600 transition-colors">
+                        🔌 Test Connection
+                    </button>
+                </div>
+
+                <!-- Activity Log -->
+                <div class="bg-slate-800/50 border border-slate-700 rounded-xl p-4 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-white">Activity Log</h3>
+                        <button onclick="clearLog()" class="text-[9px] text-slate-500 hover:text-red-400">Clear</button>
+                    </div>
+                    <div id="activity-log" class="h-40 overflow-y-auto bg-slate-900 border border-slate-700 rounded-lg p-3 font-mono text-[10px] text-slate-400 space-y-0.5 scrollbar-thin"></div>
+                </div>
+
+                <!-- App Info -->
+                <div class="text-center pb-4">
+                    <p class="text-[10px] text-slate-600">Mission Runner v7.1 • Built for Ahmed</p>
+                    <p class="text-[9px] text-slate-700">Gahiz × Content Factory × The Wired Leader</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Core Application Logic -->
+    <script>
+        // ==================== STATE ====================
+        const PROJECTS = {
+            general: { id: 'general', name: 'Mission Control', systemPrompt: 'You are an AI execution assistant for Ahmed. Be concise. Always end with action steps.' },
+            gahiz: { id: 'gahiz', name: 'Gahiz (جاهز)', systemPrompt: 'You are working on Gahiz — an AI interview simulation platform for Egyptian BPO job seekers. Tech: Next.js 14, TypeScript, Prisma/PostgreSQL, AssemblyAI, Claude API, Paymob. When creating files, output mission-json code blocks.' },
+            content_factory: { id: 'content_factory', name: 'Content Factory', systemPrompt: 'You are working on Content Factory — an AI content production system for client brands. Output is browser-based HTML single-file tools using Claude API.' },
+            wired_leader: { id: 'wired_leader', name: 'Wired Leader', systemPrompt: 'You are working on The Wired Leader — a client brand for ADHD coaching (Hesham Elansari). Be direct and actionable.' }
+        };
+
+        let activeProject = 'general';
+        let activeTab = 'agent';
+        let activeProvider = 'gemini';
+        let conversations = {};
+        let extractedSteps = [];
+        let pendingAutoSave = null;
+        let pendingShareText = null;
+
+        // Load persisted state
+        try {
+            const saved = JSON.parse(localStorage.getItem('mr_state') || '{}');
+            if (saved.activeProject && PROJECTS[saved.activeProject]) activeProject = saved.activeProject;
+            if (saved.activeProvider) activeProvider = saved.activeProvider;
+            conversations = JSON.parse(sessionStorage.getItem('mr_chats') || '{}');
+        } catch(e) { /* fresh start */ }
+
+        // Ensure all projects have chat arrays
+        Object.keys(PROJECTS).forEach(k => { if (!conversations[k]) conversations[k] = []; });
+
+        // ==================== SYSTEM ORDER SNIPPET ====================
+        const SYSTEM_ORDER = `SYSTEM ORDER — MISSION RUNNER PROTOCOL
+
+You are working with Ahmed, a freelance consultant in Egypt running Gahiz, Content Factory, and The Wired Leader. He works entirely from his Samsung Android phone.
+
+OUTPUT RULES:
+1. NEVER ask Ahmed to create files manually. Use Mission JSON blocks.
+2. ALWAYS end responses with Action Steps.
+3. ALWAYS provide an Auto-Save link at the end of long responses.
+
+FORMATS:
+- Mission JSON: \`\`\`mission-json { "project": "name", "files": [{"path":"file","content":"..."}] }\`\`\`
+- Action Steps: JSON array with step, action, type (navigate/copy/download/write/search/cloud/other), detail
+- Auto-Save: https://madnessgate44-debug.github.io/Mission-runner/?autosave=[BASE64]`;
+
+        document.getElementById('system-order-snippet').value = SYSTEM_ORDER;
+
+        // ==================== TOAST SYSTEM ====================
+        function toast(message, type = 'info', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            const colors = {
+                info: 'bg-slate-800 border-slate-600 text-white',
+                success: 'bg-emerald-800 border-emerald-600 text-white',
+                error: 'bg-red-800 border-red-600 text-white',
+                warning: 'bg-amber-800 border-amber-600 text-white'
+            };
+            const toast = document.createElement('div');
+            toast.className = `toast px-4 py-2.5 rounded-xl border text-xs font-bold shadow-lg ${colors[type] || colors.info}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+            setTimeout(() => { toast.remove(); }, duration);
+        }
+
+        // ==================== LOGGING ====================
+        function pushLog(message, status = 'info') {
+            const container = document.getElementById('activity-log');
+            if (!container) return;
+            const entry = document.createElement('div');
+            const colors = { info: 'text-slate-400', success: 'text-emerald-400', error: 'text-red-400', warning: 'text-amber-400' };
+            entry.className = colors[status] || colors.info;
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(entry);
+            container.scrollTop = container.scrollHeight;
+            
+            // Keep log manageable
+            while (container.children.length > 100) container.firstChild.remove();
+        }
+
+        function clearLog() {
+            document.getElementById('activity-log').innerHTML = '';
+            pushLog('Log cleared', 'info');
+        }
+
+        // ==================== TAB SWITCHING ====================
+        function switchTab(tabId) {
+            activeTab = tabId;
+            ['agent', 'mission', 'capture', 'settings'].forEach(t => {
+                document.getElementById(`view-${t}`).classList.add('hidden');
+                document.getElementById(`tab-${t}`).classList.remove('border-accent-500', 'text-white');
+                document.getElementById(`tab-${t}`).classList.add('border-transparent', 'text-slate-500');
+            });
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById(`tab-${tabId}`).classList.add('border-accent-500', 'text-white');
+            document.getElementById(`tab-${tabId}`).classList.remove('border-transparent', 'text-slate-500');
+            
+            if (tabId === 'agent') renderChatHistory();
+            if (tabId === 'settings') updateConnectionIndicator();
+        }
+
+        // ==================== PROJECT SWITCHING ====================
+        function switchProject(projectId) {
+            activeProject = projectId;
+            saveState();
+            if (activeTab === 'agent') renderChatHistory();
+            document.getElementById('capture-project').value = projectId === 'general' ? '' : projectId;
+        }
+
+        // ==================== API KEY MANAGEMENT ====================
+        function switchProvider(provider) {
+            activeProvider = provider;
+            document.getElementById('gemini-settings').classList.toggle('hidden', provider !== 'gemini');
+            document.getElementById('claude-settings').classList.toggle('hidden', provider !== 'claude');
+            document.getElementById('provider-select').value = provider;
+            saveState();
+            updateConnectionIndicator();
+        }
+
+        function saveKey(provider, value) {
+            sessionStorage.setItem(`mr_key_${provider}`, value.trim());
+            updateConnectionIndicator();
+        }
+
+        function saveModel(provider, value) {
+            sessionStorage.setItem(`mr_model_${provider}`, value);
+            updateConnectionIndicator();
+            document.getElementById('active-model-name').textContent = 
+                provider === 'gemini' ? (value === 'gemini-2.5-pro' ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash') : 
+                (value === 'claude-sonnet-4-20250514' ? 'Claude Sonnet 4' : 'Claude 3.5 Sonnet');
+        }
+
+        function saveGitHubToken(value) {
+            localStorage.setItem('mr_github_token', value.trim());
+            if (value.trim()) {
+                pushLog('GitHub token saved', 'success');
+            }
+        }
+
+        function updateConnectionIndicator() {
+            const key = sessionStorage.getItem(`mr_key_${activeProvider}`);
+            const dot = document.getElementById('connection-dot');
+            const label = document.getElementById('connection-label');
+            
+            if (key && key.length > 10) {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400';
+                label.textContent = `${activeProvider.toUpperCase()} Connected`;
+                label.className = 'text-[10px] text-emerald-400 font-mono';
+            } else {
+                dot.className = 'w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse-dot';
+                label.textContent = 'No API Key';
+                label.className = 'text-[10px] text-amber-400 font-mono';
+            }
+        }
+
+        function saveState() {
+            localStorage.setItem('mr_state', JSON.stringify({
+                activeProject,
+                activeProvider
+            }));
+        }
+
+        // ==================== AUTO-SAVE & SHARE TARGET ====================
+        function processAutoSaveLink() {
+            const params = new URLSearchParams(window.location.search);
+            const data = params.get('autosave');
+            if (!data) return;
+            
+            try {
+                pendingAutoSave = JSON.parse(decodeURIComponent(atob(data)));
+                if (!pendingAutoSave.project || !pendingAutoSave.text) throw new Error('Invalid payload');
+                
+                document.getElementById('autosave-banner').classList.remove('hidden');
+                pushLog(`Auto-save link detected: ${pendingAutoSave.project}`, 'success');
+                
+                // Clean URL
+                if (history.replaceState) {
+                    history.replaceState(null, '', window.location.pathname);
+                }
+            } catch(e) {
+                pushLog('Invalid auto-save link', 'error');
+            }
+        }
+
+        function processShareTarget() {
+            const params = new URLSearchParams(window.location.search);
+            const text = params.get('text');
+            const title = params.get('title');
+            
+            if (text) {
+                pendingShareText = { text, title: title || 'Shared Content' };
+                document.getElementById('share-banner').classList.remove('hidden');
+                pushLog('Shared content received', 'success');
+                
+                if (history.replaceState) {
+                    history.replaceState(null, '', window.location.pathname);
+                }
+            }
+        }
+
+        function saveAutoSaveContent() {
+            if (!pendingAutoSave) return;
+            const blob = new Blob([pendingAutoSave.text], { type: 'text/markdown;charset=utf-8' });
+            downloadBlob(blob, `${pendingAutoSave.project}-conversation.md`);
+            document.getElementById('autosave-banner').classList.add('hidden');
+            pushLog(`Auto-saved: ${pendingAutoSave.project}`, 'success');
+            pendingAutoSave = null;
+        }
+
+        function saveSharedContent() {
+            if (!pendingShareText) return;
+            const blob = new Blob([pendingShareText.text], { type: 'text/plain;charset=utf-8' });
+            downloadBlob(blob, `${pendingShareText.title.replace(/[^a-z0-9]/gi, '-')}.txt`);
+            document.getElementById('share-banner').classList.add('hidden');
+            pushLog('Shared content saved', 'success');
+            pendingShareText = null;
+        }
+
+        function downloadBlob(blob, filename) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+
+        // ==================== CLIPBOARD ====================
+        async function pasteFromClipboard() {
+            try {
+                const text = await navigator.clipboard.readText();
+                if (activeTab === 'agent') {
+                    document.getElementById('message-input').value = text;
+                    document.getElementById('message-input').focus();
+                } else if (activeTab === 'mission') {
+                    document.getElementById('mission-json-input').value = text;
+                    validateMissionJson(text);
+                } else if (activeTab === 'capture') {
+                    document.getElementById('capture-content').value = text;
+                }
+                toast('📋 Pasted from clipboard', 'success');
+                pushLog('Clipboard content pasted', 'info');
+            } catch(e) {
+                toast('⚠️ Cannot access clipboard. Paste manually.', 'warning');
+            }
+        }
+
+        function copySystemOrder() {
+            navigator.clipboard.writeText(SYSTEM_ORDER).then(() => {
+                toast('📋 System Order copied! Paste it to any AI.', 'success');
+                pushLog('System Order copied to clipboard', 'success');
+            });
+        }
+
+        // ==================== CHAT ====================
+        function renderChatHistory() {
+            const container = document.getElementById('chat-messages');
+            const list = conversations[activeProject] || [];
+            
+            if (list.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <i data-lucide="message-square" class="w-10 h-10 text-slate-700 mx-auto mb-3"></i>
+                        <p class="text-xs text-slate-500 font-mono">Paste AI output or ask a question</p>
+                        <p class="text-[10px] text-slate-600 mt-1">Active: <span id="active-model-name" class="text-accent-500">${getModelDisplayName()}</span></p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = '';
+            list.forEach(m => {
+                const isUser = m.role === 'user';
+                const div = document.createElement('div');
+                div.className = `flex ${isUser ? 'justify-end' : 'justify-start'} animate-slideUp`;
+                
+                let content = m.text
+                    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                    .replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) => {
+                        return `<pre class="bg-slate-900 border border-slate-700 rounded-lg p-3 my-2 text-[10px] font-mono text-slate-300 overflow-x-auto whitespace-pre-wrap">${code.trim()}</pre>`;
+                    })
+                    .replace(/`([^`]+)`/g, '<code class="bg-slate-700 px-1.5 py-0.5 rounded text-[10px] font-mono text-accent-400">$1</code>');
+                
+                div.innerHTML = `
+                    <div class="max-w-[85%] rounded-2xl px-4 py-3 text-xs ${isUser ? 'bg-accent-600 text-white rounded-br-md' : 'bg-slate-800 border border-slate-700 text-slate-200 rounded-bl-md'}">
+                        <div class="whitespace-pre-line leading-relaxed">${content}</div>
+                        ${!isUser ? `<button onclick="copyMessageContent(this)" class="mt-2 text-[9px] text-slate-500 hover:text-accent-400 font-bold">📋 Copy</button>` : ''}
+                    </div>`;
+                container.appendChild(div);
+            });
+            
+            container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
+        }
+
+        function copyMessageContent(btn) {
+            const msgDiv = btn.parentElement.querySelector('.whitespace-pre-line');
+            if (msgDiv) {
+                navigator.clipboard.writeText(msgDiv.textContent).then(() => {
+                    toast('📋 Message copied', 'success');
+                });
+            }
+        }
+
+        function getModelDisplayName() {
+            if (activeProvider === 'gemini') {
+                const model = sessionStorage.getItem('mr_model_gemini') || 'gemini-2.5-flash';
+                return model === 'gemini-2.5-pro' ? 'Gemini 2.5 Pro' : 'Gemini 2.5 Flash';
+            } else {
+                const model = sessionStorage.getItem('mr_model_claude') || 'claude-sonnet-4-20250514';
+                return model === 'claude-sonnet-4-20250514' ? 'Claude Sonnet 4' : 'Claude 3.5 Sonnet';
+            }
+        }
+
+        async function handleSendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('message-input');
+            const btn = document.getElementById('send-btn');
+            const query = input.value.trim();
+            if (!query) return;
+
+            input.value = '';
+            input.style.height = 'auto';
+            btn.disabled = true;
+            
+            conversations[activeProject].push({ role: 'user', text: query });
+            renderChatHistory();
+
+            // Show typing indicator
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'flex justify-start animate-slideUp';
+            typingDiv.innerHTML = `<div class="bg-slate-800 border border-slate-700 rounded-2xl rounded-bl-md px-4 py-3 text-xs text-slate-400">⏳ Thinking...</div>`;
+            document.getElementById('chat-messages').appendChild(typingDiv);
+            document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
+
+            try {
+                const key = sessionStorage.getItem(`mr_key_${activeProvider}`);
+                if (!key) throw new Error('No API key configured. Add it in Settings.');
+
+                const systemPrompt = PROJECTS[activeProject].systemPrompt;
+                let reply;
+
+                if (activeProvider === 'gemini') {
+                    reply = await callGemini(query, systemPrompt, key);
+                } else {
+                    reply = await callClaude(query, systemPrompt, key);
+                }
+
+                conversations[activeProject].push({ role: 'assistant', text: reply });
+                pushLog('AI response received', 'success');
+            } catch(err) {
+                conversations[activeProject].push({ role: 'assistant', text: `❌ Error: ${err.message}` });
+                pushLog(`AI error: ${err.message}`, 'error');
+                toast(`Error: ${err.message}`, 'error', 5000);
+            } finally {
+                typingDiv.remove();
+                sessionStorage.setItem('mr_chats', JSON.stringify(conversations));
+                renderChatHistory();
+                btn.disabled = false;
+            }
+        }
+
+        async function callGemini(query, systemPrompt, key) {
+            const model = sessionStorage.getItem('mr_model_gemini') || 'gemini-2.5-flash';
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+            
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: query }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] }
+                })
+            });
+            
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+            return data.candidates?.[0]?.content?.parts?.[0]?.text || '(Empty response)';
+        }
+
+        async function callClaude(query, systemPrompt, key) {
+            const model = sessionStorage.getItem('mr_model_claude') || 'claude-sonnet-4-20250514';
+            
+            const res = await fetch('https://api.anthropic.com/v1/messages', {
+                method: 'POST',
+                headers: {
+                    'x-api-key': key,
+                    'anthropic-version': '2023-06-01',
+                    'content-type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model,
+                    max_tokens: 4000,
+                    system: systemPrompt,
+                    messages: [{ role: 'user', content: query }]
+                })
+            });
+            
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error?.message || `HTTP ${res.status}`);
+            return data.content?.[0]?.text || '(Empty response)';
+        }
+
+        function handleKeyDown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSendMessage(e);
+            }
+        }
+
+        // ==================== MISSION EXECUTOR ====================
+        function validateMissionJson(text) {
+            const status = document.getElementById('json-status');
+            const saveBtn = document.getElementById('save-local-btn');
+            const deployBtn = document.getElementById('deploy-cloud-btn');
+            
+            if (!text.trim()) {
+                status.textContent = 'Ready';
+                status.className = 'text-[9px] font-mono text-slate-500';
+                saveBtn.disabled = true;
+                deployBtn.disabled = true;
+                return;
+            }
+            
+            try {
+                const parsed = JSON.parse(text);
+                if (!parsed.project || !Array.isArray(parsed.files)) {
+                    throw new Error('Missing "project" or "files" array');
+                }
+                if (parsed.files.length === 0) throw new Error('Files array is empty');
+                if (!parsed.files.every(f => f.path && typeof f.content === 'string')) {
+                    throw new Error('Each file needs "path" and "content"');
+                }
+                
+                status.textContent = `✓ Valid — ${parsed.files.length} files`;
+                status.className = 'text-[9px] font-mono text-emerald-400 font-bold';
+                saveBtn.disabled = false;
+                deployBtn.disabled = false;
+            } catch(e) {
+                status.textContent = `✗ ${e.message}`;
+                status.className = 'text-[9px] font-mono text-red-400 font-bold';
+                saveBtn.disabled = true;
+                deployBtn.disabled = true;
+            }
+        }
+
+        async function executeMissionLocally() {
+            const jsonText = document.getElementById('mission-json-input').value;
+            let parsed;
+            try { parsed = JSON.parse(jsonText); } catch(e) {
+                toast('Invalid JSON', 'error');
+                return;
+            }
+
+            pushLog(`Executing mission locally: ${parsed.project} (${parsed.files.length} files)`, 'info');
+
+            // Try File System Access API first (Android Chrome)
+            if ('showDirectoryPicker' in window) {
+                try {
+                    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    for (const file of parsed.files) {
+                        const parts = file.path.split('/');
+                        const fileName = parts.pop();
+                        let currentDir = dirHandle;
+                        
+                        for (const part of parts) {
+                            currentDir = await currentDir.getDirectoryHandle(part, { create: true });
+                        }
+                        
+                        const fileHandle = await currentDir.getFileHandle(fileName, { create: true });
+                        const writable = await fileHandle.createWritable();
+                        await writable.write(file.content);
+                        await writable.close();
+                        pushLog(`Created: ${file.path}`, 'success');
+                    }
+                    toast(`✅ ${parsed.files.length} files saved!`, 'success');
+                    return;
+                } catch(e) {
+                    if (e.name !== 'AbortError') {
+                        pushLog(`Folder access denied, using download fallback: ${e.message}`, 'warning');
+                    }
+                }
+            }
+
+            // Fallback: individual downloads
+            for (const file of parsed.files) {
+                const blob = new Blob([file.content], { type: 'text/plain;charset=utf-8' });
+                const filename = file.path.split('/').pop();
+                downloadBlob(blob, filename);
+                pushLog(`Downloaded: ${filename}`, 'success');
+            }
+            toast(`📥 ${parsed.files.length} files downloading...`, 'info');
+        }
+
+        async function deployMissionToCloud() {
+            const jsonText = document.getElementById('mission-json-input').value;
+            let parsed;
+            try { parsed = JSON.parse(jsonText); } catch(e) {
+                toast('Invalid JSON', 'error');
+                return;
+            }
+
+            const token = localStorage.getItem('mr_github_token');
+            if (!token) {
+                toast('⚠️ Add GitHub token in Settings first', 'warning');
+                pushLog('Cloud deploy aborted: No GitHub token', 'error');
+                return;
+            }
+
+            pushLog(`Deploying to cloud: ${parsed.project}`, 'info');
+            
+            try {
+                const res = await fetch('https://api.github.com/repos/madnessgate44-debug/Mission-runner/dispatches', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        event_type: 'mission',
+                        client_payload: {
+                            task: 'deploy_site',
+                            target: `sites/${parsed.project}`,
+                            files: parsed.files,
+                            triggered_by: 'ahmed',
+                            timestamp: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (res.status === 204) {
+                    toast('☁️ Cloud Brain triggered! Check GitHub Actions.', 'success');
+                    pushLog('Cloud Brain workflow dispatched successfully', 'success');
+                } else {
+                    const errTxt = await res.text();
+                    throw new Error(`HTTP ${res.status}: ${errTxt}`);
+                }
+            } catch(e) {
+                toast(`Cloud deploy failed: ${e.message}`, 'error');
+                pushLog(`Cloud deploy error: ${e.message}`, 'error');
+            }
+        }
+
+        function loadDemoMission() {
+            const demo = {
+                project: "gahiz-demo",
+                files: [
+                    {
+                        path: "index.html",
+                        content: "<!DOCTYPE html>\n<html lang='en'>\n<head>\n  <meta charset='UTF-8'>\n  <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n  <title>Gahiz Demo</title>\n  <style>\n    body { font-family: sans-serif; background: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }\n    h1 { color: #3b82f6; }\n  </style>\n</head>\n<body>\n  <div style='text-align:center'>\n    <h1>🚀 Gahiz Demo</h1>\n    <p>Deployed by Mission Runner</p>\n  </div>\n</body>\n</html>"
+                    },
+                    {
+                        path: "README.md",
+                        content: "# Gahiz Demo\n\nAuto-generated by Mission Runner.\n"
+                    }
+                ]
+            };
+            document.getElementById('mission-json-input').value = JSON.stringify(demo, null, 2);
+            validateMissionJson(JSON.stringify(demo, null, 2));
+            toast('📁 Demo mission loaded', 'info');
+        }
+
+        // ==================== STEP EXTRACTOR ====================
+        function triggerOfflineExtraction() {
+            // Get text from whichever input is most relevant
+            let text = '';
+            if (activeTab === 'agent') {
+                text = document.getElementById('message-input').value;
+                if (!text.trim() && conversations[activeProject].length > 0) {
+                    // Try last AI message
+                    const lastMsg = [...conversations[activeProject]].reverse().find(m => m.role === 'assistant');
+                    if (lastMsg) text = lastMsg.text;
+                }
+            } else {
+                text = document.getElementById('mission-json-input').value;
+            }
+            
+            if (!text.trim()) {
+                toast('No text to extract from. Paste AI output first.', 'warning');
+                return;
+            }
+
+            extractedSteps = extractStepsOffline(text);
+            
+            const panel = document.getElementById('steps-panel');
+            const container = document.getElementById('steps-container');
+            const count = document.getElementById('step-count');
+            
+            if (extractedSteps.length === 0) {
+                panel.classList.add('hidden');
+                toast('No actionable steps found in text', 'warning');
+                pushLog('Step extraction: 0 steps found', 'warning');
+                return;
+            }
+
+            panel.classList.remove('hidden');
+            count.textContent = `${extractedSteps.length} steps`;
+            container.innerHTML = '';
+            
+            extractedSteps.forEach((step, idx) => {
+                const icons = {
+                    navigate: 'external-link', copy: 'copy', download: 'download',
+                    write: 'edit-3', search: 'search', cloud: 'cloud-lightning',
+                    paste: 'clipboard-paste', other: 'hand'
+                };
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-3 bg-slate-900 border border-slate-700 rounded-xl text-xs animate-slideUp';
+                div.innerHTML = `
+                    <div class="flex items-center gap-3 truncate flex-1 min-w-0">
+                        <span class="text-[10px] text-slate-500 font-mono flex-shrink-0">#${idx + 1}</span>
+                        <div class="p-1.5 rounded-lg bg-slate-800 text-accent-400 flex-shrink-0">
+                            <i data-lucide="${icons[step.type] || 'hand'}" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div class="truncate min-w-0">
+                            <span class="text-[9px] uppercase font-bold text-slate-500 block">${step.type}</span>
+                            <span class="truncate text-slate-300 block text-[11px]">${step.action}</span>
+                        </div>
+                    </div>
+                    <button onclick="executeStep(${idx})" class="flex-shrink-0 ml-2 px-3 py-1.5 bg-accent-600 text-[10px] text-white rounded-lg font-bold hover:bg-accent-700 transition-colors">Run</button>
+                `;
+                container.appendChild(div);
+            });
+            
+            lucide.createIcons();
+            pushLog(`Step extraction: ${extractedSteps.length} steps found`, 'success');
+            toast(`✂️ ${extractedSteps.length} steps extracted`, 'success');
+            
+            // Auto-switch to mission tab to show results
+            if (activeTab === 'agent') switchTab('mission');
+        }
+
+        function extractStepsOffline(text) {
+            const steps = [];
+            let stepNum = 1;
+            
+            const actionVerbs = [
+                'open', 'go to', 'navigate', 'visit', 'click', 'tap', 'press',
+                'copy', 'paste', 'type', 'enter', 'fill', 'write',
+                'download', 'save', 'export', 'upload',
+                'install', 'run', 'execute', 'deploy',
+                'create', 'make', 'build', 'generate',
+                'delete', 'remove', 'clear', 'reset',
+                'send', 'share', 'post', 'publish',
+                'search', 'find', 'look for',
+                'subscribe', 'register', 'sign up', 'log in'
+            ];
+            
+            const numberedRegex = /^(?:step\s*)?(\d+)[.):\s]+(.+)$/gim;
+            const bulletRegex = /^[-•*]\s+(.+)$/gim;
+            const verbRegex = new RegExp(`^(${actionVerbs.join('|')})\\s+(.+)$`, 'gim');
+            
+            let match;
+            
+            // Try numbered first
+            while ((match = numberedRegex.exec(text)) !== null) {
+                steps.push(createStep(match[2], stepNum++));
+            }
+            
+            // Try bullets if no numbered items
+            if (steps.length === 0) {
+                while ((match = bulletRegex.exec(text)) !== null) {
+                    steps.push(createStep(match[1], stepNum++));
+                }
+            }
+            
+            // Try action verb lines
+            if (steps.length === 0) {
+                while ((match = verbRegex.exec(text)) !== null) {
+                    steps.push(createStep(match[1] + ' ' + match[2], stepNum++));
+                }
+            }
+            
+            // Try JSON action steps block
+            if (steps.length === 0) {
+                const jsonMatch = text.match(/\[\s*\{[\s\S]*?"step"[\s\S]*?\}\s*\]/);
+                if (jsonMatch) {
+                    try {
+                        const parsed = JSON.parse(jsonMatch[0]);
+                        parsed.forEach(s => {
+                            steps.push({
+                                step: s.step || stepNum++,
+                                action: s.action || '',
+                                type: s.type || 'other',
+                                detail: s.detail || ''
+                            });
+                        });
+                    } catch(e) { /* not valid JSON */ }
+                }
+            }
+            
+            return steps;
+        }
+
+        function createStep(action, num) {
+            const a = action.toLowerCase();
+            let type = 'other';
+            let detail = action;
+            
+            // Extract URL
+            const urlMatch = action.match(/https?:\/\/[^\s\)"]+/);
+            if (urlMatch) detail = urlMatch[0];
+            
+            if (/open|go to|navigate|visit|click.*link/i.test(a)) type = 'navigate';
+            else if (/copy/i.test(a)) type = 'copy';
+            else if (/paste/i.test(a)) type = 'paste';
+            else if (/download|save|export/i.test(a)) type = 'download';
+            else if (/type|enter|fill|write/i.test(a)) type = 'write';
+            else if (/search|find|look/i.test(a)) type = 'search';
+            else if (/deploy|run|execute|trigger/i.test(a)) type = 'cloud';
+            
+            return { step: num, action, type, detail };
+        }
+
+        // ==================== STEP EXECUTION ====================
+        function executeStep(index) {
+            const step = extractedSteps[index];
+            if (!step) return;
+            
+            pushLog(`Executing step ${step.step}: ${step.action}`, 'info');
+            
+            switch(step.type) {
+                case 'navigate':
+                    const url = step.detail.startsWith('http') ? step.detail : `https://${step.detail}`;
+                    window.open(url, '_blank');
+                    toast(`🔗 Opened: ${url}`, 'info');
+                    break;
+                    
+                case 'copy':
+                    navigator.clipboard.writeText(step.detail).then(() => {
+                        toast('📋 Copied to clipboard', 'success');
+                    });
+                    break;
+                    
+                case 'download':
+                    const blob = new Blob([step.detail], { type: 'text/plain' });
+                    downloadBlob(blob, `step-${step.step}.txt`);
+                    toast('📥 Download started', 'info');
+                    break;
+                    
+                case 'cloud':
+                    const token = localStorage.getItem('mr_github_token');
+                    if (token) {
+                        triggerCloudTask('run_script', { script: step.detail });
+                    } else {
+                        toast('⚠️ Need GitHub token in Settings', 'warning');
+                    }
+                    break;
+                    
+                default:
+                    toast(`👆 Manual step: ${step.action}`, 'info', 5000);
+            }
+        }
+
+        function executeAllSteps() {
+            if (extractedSteps.length === 0) return;
+            toast(`▶️ Executing ${extractedSteps.length} steps...`, 'info');
+            pushLog(`Executing all ${extractedSteps.length} steps`, 'info');
+            
+            // Execute with small delays to avoid popup blocking
+            extractedSteps.forEach((step, i) => {
+                setTimeout(() => executeStep(i), i * 800);
+            });
+        }
+
+        async function triggerCloudTask(task, payload = {}) {
+            const token = localStorage.getItem('mr_github_token');
+            if (!token) {
+                toast('⚠️ GitHub token required', 'warning');
+                return;
+            }
+            
+            try {
+                const res = await fetch('https://api.github.com/repos/madnessgate44-debug/Mission-runner/dispatches', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json',
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        event_type: 'mission',
+                        client_payload: { task, ...payload }
+                    })
+                });
+                
+                if (res.status === 204) {
+                    toast('☁️ Cloud task dispatched', 'success');
+                    pushLog('Cloud task triggered successfully', 'success');
+                } else {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+            } catch(e) {
+                toast(`Cloud error: ${e.message}`, 'error');
+                pushLog(`Cloud trigger failed: ${e.message}`, 'error');
+            }
+        }
+
+        async function testGitHubConnection() {
+            const token = document.getElementById('github-token').value.trim();
+            if (!token) {
+                toast('Enter a GitHub token first', 'warning');
+                return;
+            }
+            
+            try {
+                const res = await fetch('https://api.github.com/user', {
+                    headers: {
+                        'Authorization': `token ${token}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    toast(`✅ Connected as @${data.login}`, 'success');
+                    pushLog(`GitHub connection verified: @${data.login}`, 'success');
+                } else {
+                    throw new Error(`HTTP ${res.status}`);
+                }
+            } catch(e) {
+                toast('❌ Invalid token or network error', 'error');
+                pushLog(`GitHub test failed: ${e.message}`, 'error');
+            }
+        }
+
+        // ==================== CAPTURE ====================
+        function saveManualCapture() {
+            const project = document.getElementById('capture-project').value.trim() || activeProject;
+            const content = document.getElementById('capture-content').value;
+            
+            if (!content.trim()) {
+                toast('Nothing to save', 'warning');
+                return;
+            }
+            
+            const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
+            downloadBlob(blob, `${project}-session-${Date.now()}.md`);
+            pushLog(`Session saved: ${project}`, 'success');
+            toast('📥 Session saved', 'success');
+        }
+
+        function saveQuickNote() {
+            const content = document.getElementById('quick-note').value;
+            if (!content.trim()) {
+                toast('Nothing to save', 'warning');
+                return;
+            }
+            
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            downloadBlob(blob, `quick-note-${Date.now()}.txt`);
+            document.getElementById('quick-note').value = '';
+            pushLog('Quick note saved', 'success');
+            toast('📝 Note saved', 'success');
+        }
+
+        // ==================== CAMERA SCANNER (OCR) ====================
+        async function scanWithCamera() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.capture = 'environment';
+            
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                toast('🔍 Running OCR...', 'info');
+                pushLog('OCR scan started', 'info');
+                
+                try {
+                    const { data: { text } } = await Tesseract.recognize(file, 'eng+ara', {
+                        logger: m => {
+                            if (m.status === 'recognizing text' && m.progress) {
+                                // Progress updates could go here
+                            }
+                        }
+                    });
+                    
+                    if (activeTab === 'agent') {
+                        document.getElementById('message-input').value = text;
+                    } else if (activeTab === 'mission') {
+                        document.getElementById('mission-json-input').value = text;
+                        validateMissionJson(text);
+                    } else if (activeTab === 'capture') {
+                        document.getElementById('capture-content').value = text;
+                    }
+                    
+                    toast('✅ Text extracted!', 'success');
+                    pushLog(`OCR complete: ${text.length} characters`, 'success');
+                } catch(err) {
+                    toast('OCR failed. Try again.', 'error');
+                    pushLog(`OCR error: ${err.message}`, 'error');
+                }
+            };
+            
+            input.click();
+        }
+
+        // ==================== SERVICE WORKER REGISTRATION ====================
+        function registerServiceWorker() {
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('/Mission-runner/sw.js')
+                    .then(() => pushLog('Service Worker registered (offline support)', 'success'))
+                    .catch(() => pushLog('Service Worker registration failed', 'warning'));
+            }
+        }
+
+        // ==================== INITIALIZATION ====================
+        window.addEventListener('load', () => {
+            // Restore API keys
+            const geminiKey = sessionStorage.getItem('mr_key_gemini') || '';
+            const claudeKey = sessionStorage.getItem('mr_key_claude') || '';
+            const githubToken = localStorage.getItem('mr_github_token') || '';
+            const geminiModel = sessionStorage.getItem('mr_model_gemini') || 'gemini-2.5-flash';
+            const claudeModel = sessionStorage.getItem('mr_model_claude') || 'claude-sonnet-4-20250514';
+            
+            document.getElementById('gemini-key').value = geminiKey;
+            document.getElementById('claude-key').value = claudeKey;
+            document.getElementById('github-token').value = githubToken;
+            document.getElementById('gemini-model').value = geminiModel;
+            document.getElementById('claude-model').value = claudeModel;
+            document.getElementById('provider-select').value = activeProvider;
+            document.getElementById('project-selector').value = activeProject;
+            document.getElementById('capture-project').value = activeProject === 'general' ? '' : activeProject;
+            
+            switchProvider(activeProvider);
+            switchTab('agent');
+            updateConnectionIndicator();
+            
+            // Process URL parameters
+            processAutoSaveLink();
+            processShareTarget();
+            
+            // Register service worker
+            registerServiceWorker();
+            
+            // Monitor input for send button state
+            const msgInput = document.getElementById('message-input');
+            msgInput.addEventListener('input', () => {
+                document.getElementById('send-btn').disabled = !msgInput.value.trim();
+            });
+            
+            pushLog('Mission Runner v7.1 initialized', 'info');
+            pushLog(`Active project: ${PROJECTS[activeProject].name}`, 'info');
+            
+            lucide.createIcons();
+        });
+
+        // Save state on unload
+        window.addEventListener('beforeunload', () => {
+            saveState();
+            sessionStorage.setItem('mr_chats', JSON.stringify(conversations));
+        });
+    </script>
+</body>
+</html>
