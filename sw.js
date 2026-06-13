@@ -1,12 +1,13 @@
-// FIX: Added App.html to cache (was missing — offline mode didn't work)
+// FIX: Updated cache paths to match the root directory
 const CACHE_NAME = 'meshmesh-v2';
 const CACHE_FILES = [
-  '/Meshmesh/',
-  '/Meshmesh/index.html',
-  '/Meshmesh/App.html',
-  '/Meshmesh/manifest.json'
+  '/',
+  '/index.html',
+  '/App.html',
+  '/manifest.json'
 ];
 
+// (The rest of the install, activate, and fetch event listeners remain exactly the same)
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME)
