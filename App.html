@@ -1,4 +1,3 @@
-```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,6 +26,7 @@ textarea:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
 .btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
 .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
 .btn-ghost{padding:10px 18px;background:#f5f5f0;color:#374151;border:1px solid #e8e8e3;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
+.btn-danger{padding:10px 18px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
 .row{display:flex;gap:10px;align-items:center;margin-top:8px}
 .st{border-radius:10px;padding:11px 14px;font-size:13px;display:none;line-height:1.5;margin-top:12px}
 .st.show{display:block}
@@ -35,8 +35,8 @@ textarea:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
 .st.loading{background:#faf5ff;color:#6d28d9;border:1px solid #e9d5ff}
 .spinner{display:inline-block;width:12px;height:12px;border:2px solid rgba(109,40,217,0.3);border-top-color:#7c3aed;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
 @keyframes spin{to{transform:rotate(360deg)}}
-.tabs{display:flex;gap:4px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:4px}
-.tab{flex:1;padding:9px 16px;border-radius:9px;border:none;background:transparent;font-size:14px;font-weight:500;color:#6b7280;cursor:pointer;font-family:inherit}
+.tabs{display:flex;gap:4px;background:#fff;border:1px solid #e8e8e3;border-radius:12px;padding:4px;overflow-x:auto}
+.tab{flex:1;padding:9px 8px;border-radius:9px;border:none;background:transparent;font-size:12px;font-weight:500;color:#6b7280;cursor:pointer;font-family:inherit;white-space:nowrap}
 .tab.active{background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff}
 .panel{display:none;flex-direction:column;gap:14px}
 .panel.active{display:flex}
@@ -55,8 +55,17 @@ textarea:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
 .empty{text-align:center;padding:40px 20px;color:#9ca3af;font-size:13px}
 footer{text-align:center;padding:16px}
 .reset-link{font-size:12px;color:#d1d5db;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:inherit}
-.collapsible{background:#f9f9f7;border-radius:12px;margin-top:8px;padding:12px;cursor:pointer;font-size:13px;font-weight:500;display:flex;justify-between;align-items:center}
+.collapsible{background:#f9f9f7;border-radius:12px;margin-top:8px;padding:12px;cursor:pointer;font-size:13px;font-weight:500;display:flex;justify-content:space-between;align-items:center}
 .collapsible-content{display:none;margin-top:12px}
+.deploy-log{background:#1e1e1e;border:1px solid #333;border-radius:10px;padding:12px;font-family:monospace;font-size:11px;color:#e5e5e5;max-height:300px;overflow-y:auto;line-height:1.6;margin-top:12px}
+.deploy-log .ok{color:#4ade80}
+.deploy-log .err{color:#f87171}
+.deploy-log .info{color:#60a5fa}
+.deploy-summary{font-size:14px;font-weight:700;text-align:center;padding:12px;border-radius:10px;margin-top:8px;display:none}
+.deploy-summary.show{display:block}
+.deploy-summary.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
+.deploy-summary.partial{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
+.deploy-summary.fail{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
 </style>
 </head>
 <body>
@@ -91,6 +100,7 @@ footer{text-align:center;padding:16px}
 
   <div class="tabs" id="tabBar" style="display:none">
     <button class="tab active" onclick="switchTab('pusher',this)">⬆ Push</button>
+    <button class="tab" onclick="switchTab('deploy',this)">🚀 Deploy</button>
     <button class="tab" onclick="switchTab('ai',this)">🤖 AI Builder</button>
     <button class="tab" onclick="switchTab('report',this)">📊 Report</button>
   </div>
@@ -121,6 +131,26 @@ footer{text-align:center;padding:16px}
     </div>
   </div>
 
+  <!-- Deploy Panel (NEW) -->
+  <div class="panel" id="panel-deploy">
+    <div class="card">
+      <div class="card-title">🚀 Deploy Multiple Files (Mission JSON)</div>
+      <div class="field">
+        <label>Mission JSON</label>
+        <textarea id="deployJson" placeholder='{"project":"my-app","files":[{"path":"index.html","content":"..."},{"path":"style.css","content":"..."}]}'></textarea>
+        <div class="hint">Paste a Mission JSON block with multiple files. Each file needs "path" and "content".</div>
+      </div>
+      <div class="row">
+        <button class="btn-primary" style="flex:1" onclick="deployMultipleFiles()" id="deployBtn">🚀 Parse & Deploy All</button>
+        <button class="btn-ghost" onclick="loadDeployDemo()">Demo</button>
+        <button class="btn-ghost" onclick="clearDeploy()">Clear</button>
+      </div>
+      <div class="st" id="deploySt"></div>
+      <div class="deploy-log" id="deployLog" style="display:none"></div>
+      <div class="deploy-summary" id="deploySummary"></div>
+    </div>
+  </div>
+
   <!-- AI Builder Panel -->
   <div class="panel" id="panel-ai">
     <div class="card">
@@ -137,8 +167,8 @@ footer{text-align:center;padding:16px}
       <div class="field">
         <label>AI Provider</label>
         <select id="aiProvider">
-          <option value="gemini">Google Gemini (v1/Stable)</option>
-          <option value="claude">Anthropic Claude (v1/Messages)</option>
+          <option value="gemini">Google Gemini</option>
+          <option value="claude">Anthropic Claude</option>
         </select>
       </div>
       <div class="collapsible" onclick="toggleAISettings()">
@@ -159,8 +189,13 @@ footer{text-align:center;padding:16px}
           <label>Claude API Key</label>
           <input type="password" id="claudeKey" placeholder="sk-ant-...">
         </div>
+        <div class="field">
+          <label>Gemini API Key (Direct — no proxy)</label>
+          <input type="password" id="geminiKeyDirect" placeholder="AIza...">
+          <div class="hint">For direct Gemini calls without proxy server</div>
+        </div>
         <button class="btn-ghost" style="width:100%;margin-bottom:8px" onclick="saveAIKeys()">💾 Save Configuration</button>
-        <div class="hint">Credentials stored only in your browser. Sent safely to your proxy.</div>
+        <div class="hint">Credentials stored only in your browser.</div>
       </div>
       <div class="row">
         <button class="btn-primary" style="flex:1" onclick="transformWithAI()" id="aiTransformBtn">✨ Transform & Push</button>
@@ -251,6 +286,7 @@ function showConnected(name) {
   document.getElementById('tabBar').style.display='flex';
 }
 
+// ==================== SINGLE FILE PUSH ====================
 async function pushFile() {
   var fp = document.getElementById('filePath').value.trim();
   var content = document.getElementById('fileContent').value;
@@ -286,14 +322,144 @@ function clearPush() {
   hide('pushSt');
 }
 
+// ==================== MULTI-FILE DEPLOY (NEW) ====================
+function loadDeployDemo() {
+  var demo = {
+    project: "demo",
+    files: [
+      { path: "test.html", content: "<!DOCTYPE html>\n<html>\n<head><title>Demo</title></head>\n<body>\n  <h1>Hello from Meshmesh Deploy</h1>\n  <p>This file was deployed in a batch.</p>\n</body>\n</html>" },
+      { path: "css/style.css", content: "body {\n  background: #0f172a;\n  color: #f8fafc;\n  font-family: sans-serif;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 100vh;\n  margin: 0;\n}\nh1 { color: #3b82f6; }" },
+      { path: "README.md", content: "# Demo Project\n\nDeployed via Meshmesh Deploy tab.\n" }
+    ]
+  };
+  document.getElementById('deployJson').value = JSON.stringify(demo, null, 2);
+}
+
+function clearDeploy() {
+  document.getElementById('deployJson').value = '';
+  document.getElementById('deployLog').style.display = 'none';
+  document.getElementById('deployLog').innerHTML = '';
+  document.getElementById('deploySummary').className = 'deploy-summary';
+  document.getElementById('deploySummary').textContent = '';
+  hide('deploySt');
+}
+
+function deployLogMsg(msg, cls) {
+  var log = document.getElementById('deployLog');
+  log.style.display = 'block';
+  var line = document.createElement('div');
+  line.className = cls || 'info';
+  line.textContent = msg;
+  log.appendChild(line);
+  log.scrollTop = log.scrollHeight;
+}
+
+async function deployMultipleFiles() {
+  var raw = document.getElementById('deployJson').value.trim();
+  if (!raw) { setSt('deploySt','error','Paste a Mission JSON block first.'); return; }
+  
+  var mission;
+  try { mission = JSON.parse(raw); } catch(e) {
+    setSt('deploySt','error','Invalid JSON: '+e.message);
+    return;
+  }
+  
+  if (!mission.files || !Array.isArray(mission.files) || mission.files.length === 0) {
+    setSt('deploySt','error','JSON must have a "files" array with at least one file.');
+    return;
+  }
+  
+  for (var i = 0; i < mission.files.length; i++) {
+    var f = mission.files[i];
+    if (!f.path || typeof f.content !== 'string') {
+      setSt('deploySt','error','File #'+(i+1)+' is missing "path" or "content".');
+      return;
+    }
+  }
+  
+  var btn = document.getElementById('deployBtn');
+  btn.disabled = true;
+  
+  document.getElementById('deployLog').innerHTML = '';
+  document.getElementById('deployLog').style.display = 'block';
+  document.getElementById('deploySummary').className = 'deploy-summary';
+  document.getElementById('deploySummary').textContent = '';
+  hide('deploySt');
+  
+  deployLogMsg('═══ Starting deployment: '+(mission.project||'unnamed')+' ═══', 'info');
+  deployLogMsg('Files to deploy: '+mission.files.length, 'info');
+  deployLogMsg('', 'info');
+  
+  var created = 0, updated = 0, failed = 0;
+  
+  for (var i = 0; i < mission.files.length; i++) {
+    var file = mission.files[i];
+    var fp = file.path;
+    var content = file.content;
+    
+    deployLogMsg('['+(i+1)+'/'+mission.files.length+'] Processing: '+fp+'…', 'info');
+    
+    try {
+      var sha = null;
+      try {
+        var existing = await ghFetch('/repos/'+GH_REPO+'/contents/'+fp);
+        sha = existing.sha;
+      } catch(e) {}
+      
+      var commitMsg = (mission.project ? '['+mission.project+'] ' : '') + (sha ? 'update' : 'create') + ' ' + fp + ' via Meshmesh Deploy';
+      var body = { message: commitMsg, content: btoa(unescape(encodeURIComponent(content))) };
+      if (sha) body.sha = sha;
+      
+      await ghFetch('/repos/'+GH_REPO+'/contents/'+fp, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      
+      if (sha) {
+        deployLogMsg('  ✓ UPDATED: '+fp, 'ok');
+        updated++;
+      } else {
+        deployLogMsg('  ✓ CREATED: '+fp, 'ok');
+        created++;
+      }
+    } catch(e) {
+      deployLogMsg('  ✗ FAILED: '+fp+' — '+e.message, 'err');
+      failed++;
+    }
+  }
+  
+  deployLogMsg('', 'info');
+  deployLogMsg('═══ Deployment complete ═══', 'info');
+  
+  var summary = document.getElementById('deploySummary');
+  summary.className = 'deploy-summary show';
+  
+  if (failed === 0) {
+    summary.classList.add('ok');
+    summary.textContent = '✅ All ' + mission.files.length + ' files deployed! (' + created + ' created, ' + updated + ' updated)';
+  } else if (created + updated > 0) {
+    summary.classList.add('partial');
+    summary.textContent = '⚠️ ' + (created+updated) + ' succeeded, ' + failed + ' failed. Check log above.';
+  } else {
+    summary.classList.add('fail');
+    summary.textContent = '❌ All ' + failed + ' files failed. Check log above.';
+  }
+  
+  btn.disabled = false;
+}
+
+// ==================== AI BUILDER ====================
 function saveAIKeys() {
   var gemini = document.getElementById('geminiKey').value.trim();
   var claude = document.getElementById('claudeKey').value.trim();
   var proxy = document.getElementById('proxyUrl').value.trim();
+  var geminiDirect = document.getElementById('geminiKeyDirect').value.trim();
   
   if (gemini) localStorage.setItem('meshmesh_gemini', gemini);
   if (claude) localStorage.setItem('meshmesh_claude', claude);
-  localStorage.setItem('meshmesh_proxy', proxy || 'http://localhost:3000');
+  if (proxy) localStorage.setItem('meshmesh_proxy', proxy);
+  if (geminiDirect) localStorage.setItem('meshmesh_gemini_direct', geminiDirect);
   
   setSt('aiSt','success','Configuration details saved.');
   setTimeout(function(){hide('aiSt');}, 2000);
@@ -303,14 +469,20 @@ function loadAIKeysIntoInputs() {
   var g = localStorage.getItem('meshmesh_gemini');
   var c = localStorage.getItem('meshmesh_claude');
   var p = localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000';
+  var gd = localStorage.getItem('meshmesh_gemini_direct');
   if (g) document.getElementById('geminiKey').value = g;
   if (c) document.getElementById('claudeKey').value = c;
+  if (gd) document.getElementById('geminiKeyDirect').value = gd;
   document.getElementById('proxyUrl').value = p;
 }
 
 function getCurrentAIKey() {
   var provider = document.getElementById('aiProvider').value;
-  if (provider === 'gemini') return localStorage.getItem('meshmesh_gemini');
+  if (provider === 'gemini') {
+    var direct = localStorage.getItem('meshmesh_gemini_direct');
+    if (direct) return direct;
+    return localStorage.getItem('meshmesh_gemini');
+  }
   if (provider === 'claude') return localStorage.getItem('meshmesh_claude');
   return null;
 }
@@ -344,13 +516,21 @@ async function transformWithAI() {
       currentContent = atob(existing.content.replace(/\n/g,''));
       sha = existing.sha;
     } catch(e) {}
-    setSt('aiSt','loading','Calling '+provider+' via Secure Proxy...');
+    
     var newContent = '';
-    if (provider === 'gemini') {
+    var directKey = localStorage.getItem('meshmesh_gemini_direct');
+    
+    if (provider === 'gemini' && directKey) {
+      setSt('aiSt','loading','Calling Gemini directly...');
+      newContent = await callGeminiDirect(directKey, currentContent, prompt);
+    } else if (provider === 'gemini') {
+      setSt('aiSt','loading','Calling Gemini via Secure Proxy...');
       newContent = await callGeminiProxy(apiKey, currentContent, prompt);
     } else if (provider === 'claude') {
+      setSt('aiSt','loading','Calling Claude via Secure Proxy...');
       newContent = await callClaudeProxy(apiKey, currentContent, prompt);
     }
+    
     if (!newContent || newContent.length < 50) throw new Error('AI returned an empty or invalid response.');
     setSt('aiSt','loading','Pushing to GitHub...');
     var commitMsg = 'AI ('+provider+'): '+prompt.substring(0,60);
@@ -369,6 +549,28 @@ async function transformWithAI() {
   btn.disabled = false;
 }
 
+// Direct Gemini call (no proxy needed)
+async function callGeminiDirect(apiKey, currentContent, prompt) {
+  var fullPrompt = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No markdown wrappers, no code fences, no explanations.\n\nCurrent file:\n'+(currentContent||'(empty)')+'\n\nRequest: '+prompt+'\n\nReturn ONLY the complete updated file:';
+  
+  var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      contents:[{parts:[{text:fullPrompt}]}],
+      generationConfig:{temperature:0.2,maxOutputTokens:8192}
+    })
+  });
+  
+  var data = await res.json();
+  if (!res.ok) throw new Error('Gemini error: '+(data.error?data.error.message:'HTTP '+res.status));
+  var text = data.candidates[0].content.parts[0].text;
+  
+  // Strip markdown code fences if present
+  text = text.replace(/^```[\w]*\n/gm,'').replace(/\n```$/gm,'').trim();
+  return text;
+}
+
 async function callGeminiProxy(apiKey, currentContent, prompt) {
   var proxyBase = localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000';
   var fullPrompt = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No explanations, no markdown wrappers.\n\nCurrent file:\n'+(currentContent||'(empty)')+'\n\nRequest: '+prompt;
@@ -385,7 +587,9 @@ async function callGeminiProxy(apiKey, currentContent, prompt) {
   });
   var data = await res.json();
   if (!res.ok) throw new Error('Gemini Proxy error: '+(data.error&&data.error.message||'Unknown'));
-  return data.candidates[0].content.parts[0].text;
+  var text = data.candidates[0].content.parts[0].text;
+  text = text.replace(/^```[\w]*\n/gm,'').replace(/\n```$/gm,'').trim();
+  return text;
 }
 
 async function callClaudeProxy(apiKey, currentContent, prompt) {
@@ -410,6 +614,7 @@ async function callClaudeProxy(apiKey, currentContent, prompt) {
   return data.content[0].text;
 }
 
+// ==================== REPORT ====================
 async function generateReport() {
   var btn=document.getElementById('reportBtn');
   btn.disabled=true;
@@ -461,6 +666,7 @@ function clearReport(){
   document.getElementById('reportContent').innerHTML='<div class="empty">Connect and click Generate Report</div>';
 }
 
+// ==================== UTILS ====================
 function switchTab(name,el){
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
   document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
@@ -481,5 +687,3 @@ function resetAll(){
 </script>
 </body>
 </html>
-
-```
