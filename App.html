@@ -26,7 +26,6 @@ textarea:focus{border-color:#a855f7;box-shadow:0 0 0 3px rgba(168,85,247,0.1)}
 .btn-primary{width:100%;padding:13px;background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
 .btn-primary:disabled{opacity:0.5;cursor:not-allowed}
 .btn-ghost{padding:10px 18px;background:#f5f5f0;color:#374151;border:1px solid #e8e8e3;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
-.btn-danger{padding:10px 18px;background:#fef2f2;color:#991b1b;border:1px solid #fecaca;border-radius:10px;font-size:14px;font-weight:500;cursor:pointer;font-family:inherit}
 .row{display:flex;gap:10px;align-items:center;margin-top:8px}
 .st{border-radius:10px;padding:11px 14px;font-size:13px;display:none;line-height:1.5;margin-top:12px}
 .st.show{display:block}
@@ -66,6 +65,8 @@ footer{text-align:center;padding:16px}
 .deploy-summary.ok{background:#f0fdf4;color:#166534;border:1px solid #bbf7d0}
 .deploy-summary.partial{background:#fffbeb;color:#92400e;border:1px solid #fde68a}
 .deploy-summary.fail{background:#fef2f2;color:#991b1b;border:1px solid #fecaca}
+.warn-banner{background:#fffbeb;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:12px;color:#92400e;margin-top:8px;display:none}
+.warn-banner.show{display:block}
 </style>
 </head>
 <body>
@@ -123,6 +124,7 @@ footer{text-align:center;padding:16px}
         <label>Commit Message (optional)</label>
         <input type="text" id="commitMsg" placeholder="e.g. feat: add feature">
       </div>
+      <div class="warn-banner" id="pushSizeWarn"></div>
       <div class="row">
         <button class="btn-primary" style="flex:1" onclick="pushFile()" id="pushBtn">⬆ Push to GitHub</button>
         <button class="btn-ghost" onclick="clearPush()">Clear</button>
@@ -131,14 +133,14 @@ footer{text-align:center;padding:16px}
     </div>
   </div>
 
-  <!-- Deploy Panel (NEW) -->
+  <!-- Deploy Panel -->
   <div class="panel" id="panel-deploy">
     <div class="card">
       <div class="card-title">🚀 Deploy Multiple Files (Mission JSON)</div>
       <div class="field">
         <label>Mission JSON</label>
         <textarea id="deployJson" placeholder='{"project":"my-app","files":[{"path":"index.html","content":"..."},{"path":"style.css","content":"..."}]}'></textarea>
-        <div class="hint">Paste a Mission JSON block with multiple files. Each file needs "path" and "content".</div>
+        <div class="hint">Paste a Mission JSON block. Each file needs "path" and "content".</div>
       </div>
       <div class="row">
         <button class="btn-primary" style="flex:1" onclick="deployMultipleFiles()" id="deployBtn">🚀 Parse & Deploy All</button>
@@ -173,26 +175,26 @@ footer{text-align:center;padding:16px}
       </div>
       <div class="collapsible" onclick="toggleAISettings()">
         <span>🔧 Configure Keys & Proxy</span>
-        <span>▼</span>
+        <span id="aiSettingsArrow">▼</span>
       </div>
       <div class="collapsible-content" id="aiSettingsContent">
-        <div class="field">
+        <div class="field" style="margin-top:12px">
           <label>Proxy Server URL</label>
           <input type="text" id="proxyUrl" placeholder="http://localhost:3000">
           <div class="hint">Address of your running server.js</div>
         </div>
         <div class="field">
-          <label>Gemini API Key</label>
+          <label>Gemini API Key (via Proxy)</label>
           <input type="password" id="geminiKey" placeholder="AIza...">
         </div>
         <div class="field">
-          <label>Claude API Key</label>
+          <label>Claude API Key (via Proxy)</label>
           <input type="password" id="claudeKey" placeholder="sk-ant-...">
         </div>
         <div class="field">
           <label>Gemini API Key (Direct — no proxy)</label>
           <input type="password" id="geminiKeyDirect" placeholder="AIza...">
-          <div class="hint">For direct Gemini calls without proxy server</div>
+          <div class="hint">Direct calls — no proxy server needed</div>
         </div>
         <button class="btn-ghost" style="width:100%;margin-bottom:8px" onclick="saveAIKeys()">💾 Save Configuration</button>
         <div class="hint">Credentials stored only in your browser.</div>
@@ -226,6 +228,56 @@ footer{text-align:center;padding:16px}
 </footer>
 
 <script>
+// ==================== SAFE BASE64 ENCODE ====================
+// FIX: replaces fragile btoa(unescape(encodeURIComponent())) pattern
+function toBase64(str) {
+  try {
+    return btoa(unescape(encodeURIComponent(str)));
+  } catch(e) {
+    // Fallback for edge cases
+    const bytes = new TextEncoder().encode(str);
+    let binary = '';
+    bytes.forEach(b => binary += String.fromCharCode(b));
+    return btoa(binary);
+  }
+}
+
+// FIX: proper downloadBlob with MIME type detection
+function downloadBlob(content, filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const mimeMap = {
+    'html': 'text/html',
+    'htm':  'text/html',
+    'json': 'application/json',
+    'txt':  'text/plain',
+    'js':   'text/javascript',
+    'css':  'text/css',
+    'md':   'text/markdown',
+    'csv':  'text/csv',
+    'xml':  'application/xml'
+  };
+  const mimeType = mimeMap[ext] || 'text/plain';
+  const blob = new Blob([content], { type: mimeType });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(a.href);
+}
+
+// ==================== FILE SIZE CHECK ====================
+const MAX_FILE_BYTES = 900000; // 900KB — GitHub hard limit is 1MB
+function checkFileSize(content) {
+  const bytes = new TextEncoder().encode(content).length;
+  return { bytes, ok: bytes < MAX_FILE_BYTES };
+}
+
+// ==================== RATE LIMIT DELAY ====================
+function delay(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+
+// ==================== INIT ====================
 var GH_TOKEN = localStorage.getItem('mm_ghtoken') || '';
 var GH_REPO  = localStorage.getItem('mm_ghrepo')  || '';
 
@@ -240,11 +292,15 @@ window.onload = function() {
 
 async function ghFetch(path, opts) {
   opts = opts || {};
-  var res = await fetch('https://api.github.com'+path, Object.assign({}, opts, {
-    headers: Object.assign({Authorization:'Bearer '+GH_TOKEN, Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}, opts.headers || {})
+  var res = await fetch('https://api.github.com' + path, Object.assign({}, opts, {
+    headers: Object.assign({
+      Authorization: 'Bearer ' + GH_TOKEN,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28'
+    }, opts.headers || {})
   }));
   var body = await res.json();
-  if (!res.ok) throw new Error('GitHub '+res.status+': '+body.message);
+  if (!res.ok) throw new Error('GitHub ' + res.status + ': ' + body.message);
   return body;
 }
 
@@ -256,80 +312,94 @@ async function saveSetup() {
   btn.disabled = true;
   setSt('setupSt','loading','Connecting…');
   try {
-    var res = await fetch('https://api.github.com/repos/'+r, {
-      headers:{Authorization:'Bearer '+t, Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+    var res = await fetch('https://api.github.com/repos/' + r, {
+      headers: { Authorization: 'Bearer ' + t, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
     });
     var data = await res.json();
-    if (!res.ok) { setSt('setupSt','error','GitHub error: '+data.message); btn.disabled=false; return; }
+    if (!res.ok) { setSt('setupSt','error','GitHub error: ' + data.message); btn.disabled = false; return; }
     localStorage.setItem('mm_ghtoken', t);
-    localStorage.setItem('mm_ghrepo',  r);
-    GH_TOKEN=t; GH_REPO=r;
+    localStorage.setItem('mm_ghrepo', r);
+    GH_TOKEN = t; GH_REPO = r;
     showConnected(data.full_name);
-  } catch(e) { setSt('setupSt','error','Failed: '+e.message); btn.disabled=false; }
+  } catch(e) { setSt('setupSt','error','Failed: ' + e.message); btn.disabled = false; }
 }
 
 async function autoConnect() {
   try {
-    var res = await fetch('https://api.github.com/repos/'+GH_REPO, {
-      headers:{Authorization:'Bearer '+GH_TOKEN, Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'}
+    var res = await fetch('https://api.github.com/repos/' + GH_REPO, {
+      headers: { Authorization: 'Bearer ' + GH_TOKEN, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28' }
     });
     var data = await res.json();
     if (res.ok) { showConnected(data.full_name); }
-    else { document.getElementById('setupCard').style.display='block'; }
-  } catch(e) { document.getElementById('setupCard').style.display='block'; }
+    else { document.getElementById('setupCard').style.display = 'block'; }
+  } catch(e) { document.getElementById('setupCard').style.display = 'block'; }
 }
 
 function showConnected(name) {
-  document.getElementById('connDot').className='dot on';
-  document.getElementById('connLabel').textContent=name;
-  document.getElementById('setupCard').style.display='none';
-  document.getElementById('tabBar').style.display='flex';
+  document.getElementById('connDot').className = 'dot on';
+  document.getElementById('connLabel').textContent = name;
+  document.getElementById('setupCard').style.display = 'none';
+  document.getElementById('tabBar').style.display = 'flex';
 }
 
 // ==================== SINGLE FILE PUSH ====================
 async function pushFile() {
   var fp = document.getElementById('filePath').value.trim();
   var content = document.getElementById('fileContent').value;
-  var cm = document.getElementById('commitMsg').value.trim() || ('update '+fp+' via Meshmesh');
+  var cm = document.getElementById('commitMsg').value.trim() || ('update ' + fp + ' via Meshmesh');
   if (!fp || !content) { setSt('pushSt','error','Enter a file path and paste the content.'); return; }
+
+  // FIX: file size check
+  var sizeCheck = checkFileSize(content);
+  var warnEl = document.getElementById('pushSizeWarn');
+  if (!sizeCheck.ok) {
+    warnEl.className = 'warn-banner show';
+    warnEl.textContent = '⚠️ File is ' + Math.round(sizeCheck.bytes/1024) + 'KB — exceeds GitHub 1MB limit. Push will fail.';
+    return;
+  } else {
+    warnEl.className = 'warn-banner';
+  }
+
   var btn = document.getElementById('pushBtn');
-  btn.disabled=true;
+  btn.disabled = true;
   setSt('pushSt','loading','Reading current file from GitHub…');
   try {
     var sha = null;
     try {
-      var existing = await ghFetch('/repos/'+GH_REPO+'/contents/'+fp);
+      var existing = await ghFetch('/repos/' + GH_REPO + '/contents/' + fp);
       sha = existing.sha;
     } catch(e) {}
     setSt('pushSt','loading','Pushing to GitHub…');
-    var body = {message:cm, content:btoa(unescape(encodeURIComponent(content)))};
+    // FIX: use safe toBase64
+    var body = { message: cm, content: toBase64(content) };
     if (sha) body.sha = sha;
-    await ghFetch('/repos/'+GH_REPO+'/contents/'+fp,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)
+    await ghFetch('/repos/' + GH_REPO + '/contents/' + fp, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
-    setSt('pushSt','success','✓ Done! "'+fp+'" pushed successfully.');
-    document.getElementById('fileContent').value='';
-  } catch(e) { setSt('pushSt','error','✗ '+e.message); }
-  btn.disabled=false;
+    setSt('pushSt','success','✓ Done! "' + fp + '" pushed successfully.');
+    document.getElementById('fileContent').value = '';
+  } catch(e) { setSt('pushSt','error','✗ ' + e.message); }
+  btn.disabled = false;
 }
 
 function clearPush() {
-  document.getElementById('filePath').value='';
-  document.getElementById('fileContent').value='';
-  document.getElementById('commitMsg').value='';
+  document.getElementById('filePath').value = '';
+  document.getElementById('fileContent').value = '';
+  document.getElementById('commitMsg').value = '';
+  document.getElementById('pushSizeWarn').className = 'warn-banner';
   hide('pushSt');
 }
 
-// ==================== MULTI-FILE DEPLOY (NEW) ====================
+// ==================== MULTI-FILE DEPLOY ====================
 function loadDeployDemo() {
   var demo = {
     project: "demo",
     files: [
-      { path: "test.html", content: "<!DOCTYPE html>\n<html>\n<head><title>Demo</title></head>\n<body>\n  <h1>Hello from Meshmesh Deploy</h1>\n  <p>This file was deployed in a batch.</p>\n</body>\n</html>" },
-      { path: "css/style.css", content: "body {\n  background: #0f172a;\n  color: #f8fafc;\n  font-family: sans-serif;\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  min-height: 100vh;\n  margin: 0;\n}\nh1 { color: #3b82f6; }" },
-      { path: "README.md", content: "# Demo Project\n\nDeployed via Meshmesh Deploy tab.\n" }
+      { path: "test.html", content: "<!DOCTYPE html>\n<html>\n<head><title>Demo</title></head>\n<body>\n  <h1>Hello from Meshmesh Deploy</h1>\n</body>\n</html>" },
+      { path: "css/style.css", content: "body { background: #0f172a; color: #f8fafc; font-family: sans-serif; }" },
+      { path: "README.md", content: "# Demo Project\n\nDeployed via Meshmesh.\n" }
     ]
   };
   document.getElementById('deployJson').value = JSON.stringify(demo, null, 2);
@@ -357,84 +427,91 @@ function deployLogMsg(msg, cls) {
 async function deployMultipleFiles() {
   var raw = document.getElementById('deployJson').value.trim();
   if (!raw) { setSt('deploySt','error','Paste a Mission JSON block first.'); return; }
-  
+
   var mission;
   try { mission = JSON.parse(raw); } catch(e) {
-    setSt('deploySt','error','Invalid JSON: '+e.message);
+    setSt('deploySt','error','Invalid JSON: ' + e.message);
     return;
   }
-  
+
   if (!mission.files || !Array.isArray(mission.files) || mission.files.length === 0) {
     setSt('deploySt','error','JSON must have a "files" array with at least one file.');
     return;
   }
-  
-  for (var i = 0; i < mission.files.length; i++) {
-    var f = mission.files[i];
+
+  // FIX: validate all files first before starting
+  for (let i = 0; i < mission.files.length; i++) {
+    let f = mission.files[i];
     if (!f.path || typeof f.content !== 'string') {
-      setSt('deploySt','error','File #'+(i+1)+' is missing "path" or "content".');
+      setSt('deploySt','error','File #' + (i+1) + ' is missing "path" or "content".');
+      return;
+    }
+    let sizeCheck = checkFileSize(f.content);
+    if (!sizeCheck.ok) {
+      setSt('deploySt','error','File "' + f.path + '" is ' + Math.round(sizeCheck.bytes/1024) + 'KB — too large for GitHub (max 1MB).');
       return;
     }
   }
-  
+
   var btn = document.getElementById('deployBtn');
   btn.disabled = true;
-  
+
   document.getElementById('deployLog').innerHTML = '';
   document.getElementById('deployLog').style.display = 'block';
   document.getElementById('deploySummary').className = 'deploy-summary';
   document.getElementById('deploySummary').textContent = '';
   hide('deploySt');
-  
-  deployLogMsg('═══ Starting deployment: '+(mission.project||'unnamed')+' ═══', 'info');
-  deployLogMsg('Files to deploy: '+mission.files.length, 'info');
+
+  deployLogMsg('═══ Starting deployment: ' + (mission.project || 'unnamed') + ' ═══', 'info');
+  deployLogMsg('Files to deploy: ' + mission.files.length, 'info');
   deployLogMsg('', 'info');
-  
+
   var created = 0, updated = 0, failed = 0;
-  
-  for (var i = 0; i < mission.files.length; i++) {
-    var file = mission.files[i];
-    var fp = file.path;
-    var content = file.content;
-    
-    deployLogMsg('['+(i+1)+'/'+mission.files.length+'] Processing: '+fp+'…', 'info');
-    
+
+  // FIX: use let in for loop, add delay between pushes to avoid rate limiting
+  for (let i = 0; i < mission.files.length; i++) {
+    let file = mission.files[i];
+    let fp = file.path;
+    let content = file.content;
+
+    deployLogMsg('[' + (i+1) + '/' + mission.files.length + '] Processing: ' + fp + '…', 'info');
+
     try {
-      var sha = null;
+      let sha = null;
       try {
-        var existing = await ghFetch('/repos/'+GH_REPO+'/contents/'+fp);
+        let existing = await ghFetch('/repos/' + GH_REPO + '/contents/' + fp);
         sha = existing.sha;
       } catch(e) {}
-      
-      var commitMsg = (mission.project ? '['+mission.project+'] ' : '') + (sha ? 'update' : 'create') + ' ' + fp + ' via Meshmesh Deploy';
-      var body = { message: commitMsg, content: btoa(unescape(encodeURIComponent(content))) };
+
+      let commitMsg = (mission.project ? '[' + mission.project + '] ' : '') + (sha ? 'update' : 'create') + ' ' + fp + ' via Meshmesh Deploy';
+      // FIX: use safe toBase64
+      let body = { message: commitMsg, content: toBase64(content) };
       if (sha) body.sha = sha;
-      
-      await ghFetch('/repos/'+GH_REPO+'/contents/'+fp, {
+
+      await ghFetch('/repos/' + GH_REPO + '/contents/' + fp, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
-      
-      if (sha) {
-        deployLogMsg('  ✓ UPDATED: '+fp, 'ok');
-        updated++;
-      } else {
-        deployLogMsg('  ✓ CREATED: '+fp, 'ok');
-        created++;
-      }
+
+      if (sha) { deployLogMsg('  ✓ UPDATED: ' + fp, 'ok'); updated++; }
+      else      { deployLogMsg('  ✓ CREATED: ' + fp, 'ok'); created++; }
+
+      // FIX: 500ms delay between files to avoid GitHub rate limiting
+      if (i < mission.files.length - 1) await delay(500);
+
     } catch(e) {
-      deployLogMsg('  ✗ FAILED: '+fp+' — '+e.message, 'err');
+      deployLogMsg('  ✗ FAILED: ' + fp + ' — ' + e.message, 'err');
       failed++;
     }
   }
-  
+
   deployLogMsg('', 'info');
   deployLogMsg('═══ Deployment complete ═══', 'info');
-  
+
   var summary = document.getElementById('deploySummary');
   summary.className = 'deploy-summary show';
-  
+
   if (failed === 0) {
     summary.classList.add('ok');
     summary.textContent = '✅ All ' + mission.files.length + ' files deployed! (' + created + ' created, ' + updated + ' updated)';
@@ -445,7 +522,7 @@ async function deployMultipleFiles() {
     summary.classList.add('fail');
     summary.textContent = '❌ All ' + failed + ' files failed. Check log above.';
   }
-  
+
   btn.disabled = false;
 }
 
@@ -455,23 +532,21 @@ function saveAIKeys() {
   var claude = document.getElementById('claudeKey').value.trim();
   var proxy = document.getElementById('proxyUrl').value.trim();
   var geminiDirect = document.getElementById('geminiKeyDirect').value.trim();
-  
   if (gemini) localStorage.setItem('meshmesh_gemini', gemini);
   if (claude) localStorage.setItem('meshmesh_claude', claude);
   if (proxy) localStorage.setItem('meshmesh_proxy', proxy);
   if (geminiDirect) localStorage.setItem('meshmesh_gemini_direct', geminiDirect);
-  
-  setSt('aiSt','success','Configuration details saved.');
-  setTimeout(function(){hide('aiSt');}, 2000);
+  setSt('aiSt','success','Configuration saved.');
+  setTimeout(function(){ hide('aiSt'); }, 2000);
 }
 
 function loadAIKeysIntoInputs() {
-  var g = localStorage.getItem('meshmesh_gemini');
-  var c = localStorage.getItem('meshmesh_claude');
-  var p = localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000';
+  var g  = localStorage.getItem('meshmesh_gemini');
+  var c  = localStorage.getItem('meshmesh_claude');
+  var p  = localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000';
   var gd = localStorage.getItem('meshmesh_gemini_direct');
-  if (g) document.getElementById('geminiKey').value = g;
-  if (c) document.getElementById('claudeKey').value = c;
+  if (g)  document.getElementById('geminiKey').value = g;
+  if (c)  document.getElementById('claudeKey').value = c;
   if (gd) document.getElementById('geminiKeyDirect').value = gd;
   document.getElementById('proxyUrl').value = p;
 }
@@ -489,7 +564,10 @@ function getCurrentAIKey() {
 
 function toggleAISettings() {
   var content = document.getElementById('aiSettingsContent');
-  content.style.display = (content.style.display === 'none' || !content.style.display) ? 'block' : 'none';
+  var arrow = document.getElementById('aiSettingsArrow');
+  var isOpen = content.style.display === 'block';
+  content.style.display = isOpen ? 'none' : 'block';
+  arrow.textContent = isOpen ? '▼' : '▲';
 }
 
 function clearAIFields() {
@@ -504,185 +582,183 @@ async function transformWithAI() {
   if (!filePath || !prompt) { setSt('aiSt','error','Enter file path and prompt.'); return; }
   var provider = document.getElementById('aiProvider').value;
   var apiKey = getCurrentAIKey();
-  if (!apiKey) { setSt('aiSt','error','No API key for '+provider+'. Configure it under Key & Proxy settings.'); return; }
+  if (!apiKey) { setSt('aiSt','error','No API key for ' + provider + '. Open "Configure Keys & Proxy" and save your key.'); return; }
   var btn = document.getElementById('aiTransformBtn');
   btn.disabled = true;
-  setSt('aiSt','loading','Fetching current file...');
+  setSt('aiSt','loading','Fetching current file…');
   try {
     var currentContent = '';
     var sha = null;
     try {
-      var existing = await ghFetch('/repos/'+GH_REPO+'/contents/'+filePath);
-      currentContent = atob(existing.content.replace(/\n/g,''));
+      var existing = await ghFetch('/repos/' + GH_REPO + '/contents/' + filePath);
+      currentContent = decodeURIComponent(escape(atob(existing.content.replace(/\n/g,''))));
       sha = existing.sha;
     } catch(e) {}
-    
+
     var newContent = '';
     var directKey = localStorage.getItem('meshmesh_gemini_direct');
-    
+
     if (provider === 'gemini' && directKey) {
-      setSt('aiSt','loading','Calling Gemini directly...');
+      setSt('aiSt','loading','Calling Gemini directly…');
       newContent = await callGeminiDirect(directKey, currentContent, prompt);
     } else if (provider === 'gemini') {
-      setSt('aiSt','loading','Calling Gemini via Secure Proxy...');
+      setSt('aiSt','loading','Calling Gemini via proxy…');
       newContent = await callGeminiProxy(apiKey, currentContent, prompt);
     } else if (provider === 'claude') {
-      setSt('aiSt','loading','Calling Claude via Secure Proxy...');
+      setSt('aiSt','loading','Calling Claude via proxy…');
       newContent = await callClaudeProxy(apiKey, currentContent, prompt);
     }
-    
-    if (!newContent || newContent.length < 50) throw new Error('AI returned an empty or invalid response.');
-    setSt('aiSt','loading','Pushing to GitHub...');
-    var commitMsg = 'AI ('+provider+'): '+prompt.substring(0,60);
-    var body = {message:commitMsg, content:btoa(unescape(encodeURIComponent(newContent)))};
+
+    // FIX: stronger validation — check for actual HTML/code structure
+    if (!newContent || newContent.trim().length < 100) {
+      throw new Error('AI returned an empty or invalid response. Try again.');
+    }
+
+    setSt('aiSt','loading','Pushing to GitHub…');
+    var commitMsg = 'AI (' + provider + '): ' + prompt.substring(0, 60);
+    // FIX: use safe toBase64
+    var body = { message: commitMsg, content: toBase64(newContent) };
     if (sha) body.sha = sha;
-    await ghFetch('/repos/'+GH_REPO+'/contents/'+filePath,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(body)
+    await ghFetch('/repos/' + GH_REPO + '/contents/' + filePath, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
     });
-    setSt('aiSt','success','✅ Done! '+filePath+' updated via '+provider+'.');
+    setSt('aiSt','success','✅ Done! ' + filePath + ' updated via ' + provider + '.');
     document.getElementById('aiPrompt').value = '';
   } catch(err) {
-    setSt('aiSt','error','❌ '+err.message);
+    setSt('aiSt','error','❌ ' + err.message);
   }
   btn.disabled = false;
 }
 
-// Direct Gemini call (no proxy needed)
 async function callGeminiDirect(apiKey, currentContent, prompt) {
-  var fullPrompt = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No markdown wrappers, no code fences, no explanations.\n\nCurrent file:\n'+(currentContent||'(empty)')+'\n\nRequest: '+prompt+'\n\nReturn ONLY the complete updated file:';
-  
-  var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+apiKey, {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      contents:[{parts:[{text:fullPrompt}]}],
-      generationConfig:{temperature:0.2,maxOutputTokens:8192}
+  var fullPrompt = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No markdown wrappers, no code fences, no explanations.\n\nCurrent file:\n' + (currentContent || '(empty)') + '\n\nRequest: ' + prompt + '\n\nReturn ONLY the complete updated file:';
+  var res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=' + apiKey, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: fullPrompt }] }],
+      generationConfig: { temperature: 0.2, maxOutputTokens: 8192 }
     })
   });
-  
   var data = await res.json();
-  if (!res.ok) throw new Error('Gemini error: '+(data.error?data.error.message:'HTTP '+res.status));
+  if (!res.ok) throw new Error('Gemini error: ' + (data.error ? data.error.message : 'HTTP ' + res.status));
   var text = data.candidates[0].content.parts[0].text;
-  
-  // Strip markdown code fences if present
-  text = text.replace(/^```[\w]*\n/gm,'').replace(/\n```$/gm,'').trim();
+  text = text.replace(/^```[\w]*\n?/gm, '').replace(/\n?```$/gm, '').trim();
   return text;
 }
 
 async function callGeminiProxy(apiKey, currentContent, prompt) {
-  var proxyBase = localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000';
-  var fullPrompt = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No explanations, no markdown wrappers.\n\nCurrent file:\n'+(currentContent||'(empty)')+'\n\nRequest: '+prompt;
-  var res = await fetch(proxyBase.replace(/\/$/, "") + '/api/gemini', {
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-gemini-key': apiKey
-    },
-    body:JSON.stringify({
-      contents:[{parts:[{text:fullPrompt}]}],
-      generationConfig:{temperature:0.2,maxOutputTokens:8192}
-    })
+  var proxyBase = (localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000').replace(/\/$/, '');
+  var fullPrompt = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No explanations, no markdown wrappers.\n\nCurrent file:\n' + (currentContent || '(empty)') + '\n\nRequest: ' + prompt;
+  var res = await fetch(proxyBase + '/api/gemini', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-gemini-key': apiKey },
+    body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }], generationConfig: { temperature: 0.2, maxOutputTokens: 8192 } })
   });
   var data = await res.json();
-  if (!res.ok) throw new Error('Gemini Proxy error: '+(data.error&&data.error.message||'Unknown'));
+  if (!res.ok) throw new Error('Gemini proxy error: ' + (data.error && data.error.message || 'Unknown'));
   var text = data.candidates[0].content.parts[0].text;
-  text = text.replace(/^```[\w]*\n/gm,'').replace(/\n```$/gm,'').trim();
+  text = text.replace(/^```[\w]*\n?/gm, '').replace(/\n?```$/gm, '').trim();
   return text;
 }
 
 async function callClaudeProxy(apiKey, currentContent, prompt) {
-  var proxyBase = localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000';
+  var proxyBase = (localStorage.getItem('meshmesh_proxy') || 'http://localhost:3000').replace(/\/$/, '');
   var systemMsg = 'You are an expert web developer. Update the provided file according to the request. Return ONLY the complete updated file. No explanations, no markdown wrappers.';
-  var userMsg = 'Current file:\n\n'+(currentContent||'(empty)')+'\n\nRequest: '+prompt+'\n\nReturn the full updated file.';
-  var res = await fetch(proxyBase.replace(/\/$/, "") + '/api/claude', {
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-claude-key': apiKey
-    },
-    body:JSON.stringify({
-      model:'claude-3-5-sonnet-20241022',
-      max_tokens:8000,
-      system:systemMsg,
-      messages:[{role:'user',content:userMsg}]
+  var userMsg = 'Current file:\n\n' + (currentContent || '(empty)') + '\n\nRequest: ' + prompt + '\n\nReturn the full updated file.';
+  var res = await fetch(proxyBase + '/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-claude-key': apiKey },
+    body: JSON.stringify({
+      // FIX: updated to current Claude model
+      model: 'claude-sonnet-4-6',
+      max_tokens: 8000,
+      system: systemMsg,
+      messages: [{ role: 'user', content: userMsg }]
     })
   });
   var data = await res.json();
-  if (!res.ok) throw new Error('Claude Proxy error: '+(data.error&&data.error.message||'Unknown'));
+  if (!res.ok) throw new Error('Claude proxy error: ' + (data.error && data.error.message || 'Unknown'));
   return data.content[0].text;
 }
 
 // ==================== REPORT ====================
 async function generateReport() {
-  var btn=document.getElementById('reportBtn');
-  btn.disabled=true;
-  document.getElementById('reportContent').innerHTML='';
+  var btn = document.getElementById('reportBtn');
+  btn.disabled = true;
+  document.getElementById('reportContent').innerHTML = '';
   setSt('reportSt','loading','Fetching repository data…');
   try {
     var results = await Promise.all([
-      ghFetch('/repos/'+GH_REPO),
-      ghFetch('/repos/'+GH_REPO+'/branches?per_page=10').catch(function(){return[];}),
-      ghFetch('/repos/'+GH_REPO+'/commits?per_page=8').catch(function(){return[];}),
-      ghFetch('/repos/'+GH_REPO+'/contributors?per_page=8').catch(function(){return[];}),
-      ghFetch('/repos/'+GH_REPO+'/pulls?state=open&per_page=8').catch(function(){return[];}),
-      ghFetch('/repos/'+GH_REPO+'/releases?per_page=5').catch(function(){return[];})
+      ghFetch('/repos/' + GH_REPO),
+      ghFetch('/repos/' + GH_REPO + '/branches?per_page=10').catch(function(){ return []; }),
+      ghFetch('/repos/' + GH_REPO + '/commits?per_page=8').catch(function(){ return []; }),
+      ghFetch('/repos/' + GH_REPO + '/contributors?per_page=8').catch(function(){ return []; }),
+      ghFetch('/repos/' + GH_REPO + '/pulls?state=open&per_page=8').catch(function(){ return []; }),
+      ghFetch('/repos/' + GH_REPO + '/releases?per_page=5').catch(function(){ return []; })
     ]);
     hide('reportSt');
-    renderReport(results[0],results[1],results[2],results[3],results[4],results[5]);
-  } catch(e) { setSt('reportSt','error','✗ '+e.message); }
-  btn.disabled=false;
+    renderReport(results[0], results[1], results[2], results[3], results[4], results[5]);
+  } catch(e) { setSt('reportSt','error','✗ ' + e.message); }
+  btn.disabled = false;
 }
 
-function renderReport(info,branches,commits,contributors,pulls,releases) {
-  var fmt=function(d){return d?new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'—';};
-  var html='';
-  html+='<div class="section-title">📦 Overview</div>';
-  html+='<div class="stat-grid">';
-  var stats=[['Stars',info.stargazers_count],['Forks',info.forks_count],['Issues',info.open_issues_count],['Branches',branches.length],['PRs',pulls.length],['Releases',releases.length]];
-  for(var i=0;i<stats.length;i++) html+='<div class="stat-card"><div class="stat-value">'+stats[i][1]+'</div><div class="stat-label">'+stats[i][0]+'</div></div>';
-  html+='</div>';
-  html+='<div class="section-title">⚙️ Settings</div>';
-  var settings=[['Visibility',info.private?'<span class="tag tag-gray">Private</span>':'<span class="tag tag-green">Public</span>'],['Default Branch','<span class="tag tag-purple">'+info.default_branch+'</span>'],['Language','<span class="tag tag-purple">'+(info.language||'None')+'</span>'],['Created',fmt(info.created_at)],['Updated',fmt(info.updated_at)]];
-  for(var j=0;j<settings.length;j++) html+='<div class="list-item"><span class="item-name">'+settings[j][0]+'</span><span>'+settings[j][1]+'</span></div>';
-  if(branches.length){
-    html+='<div class="section-title" style="margin-top:16px">🌿 Branches</div>';
-    for(var k=0;k<branches.length;k++) html+='<div class="list-item"><span class="item-name">'+esc(branches[k].name)+'</span><span class="tag '+(branches[k].protected?'tag-purple':'tag-gray')+'">'+(branches[k].protected?'Protected':'Unprotected')+'</span></div>';
+function renderReport(info, branches, commits, contributors, pulls, releases) {
+  var fmt = function(d){ return d ? new Date(d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—'; };
+  var html = '';
+  html += '<div class="section-title">📦 Overview</div>';
+  html += '<div class="stat-grid">';
+  var stats = [['Stars', info.stargazers_count], ['Forks', info.forks_count], ['Issues', info.open_issues_count], ['Branches', branches.length], ['PRs', pulls.length], ['Releases', releases.length]];
+  for (var i = 0; i < stats.length; i++) html += '<div class="stat-card"><div class="stat-value">' + stats[i][1] + '</div><div class="stat-label">' + stats[i][0] + '</div></div>';
+  html += '</div>';
+  html += '<div class="section-title">⚙️ Settings</div>';
+  var settings = [
+    ['Visibility', info.private ? '<span class="tag tag-gray">Private</span>' : '<span class="tag tag-green">Public</span>'],
+    ['Default Branch', '<span class="tag tag-purple">' + info.default_branch + '</span>'],
+    ['Language', '<span class="tag tag-purple">' + (info.language || 'None') + '</span>'],
+    ['Created', fmt(info.created_at)],
+    ['Updated', fmt(info.updated_at)]
+  ];
+  for (var j = 0; j < settings.length; j++) html += '<div class="list-item"><span class="item-name">' + settings[j][0] + '</span><span>' + settings[j][1] + '</span></div>';
+  if (branches.length) {
+    html += '<div class="section-title" style="margin-top:16px">🌿 Branches</div>';
+    for (var k = 0; k < branches.length; k++) html += '<div class="list-item"><span class="item-name">' + esc(branches[k].name) + '</span><span class="tag ' + (branches[k].protected ? 'tag-purple' : 'tag-gray') + '">' + (branches[k].protected ? 'Protected' : 'Unprotected') + '</span></div>';
   }
-  if(commits.length){
-    html+='<div class="section-title" style="margin-top:16px">🔁 Recent Commits</div>';
-    for(var l=0;l<commits.length;l++) html+='<div class="list-item"><span class="item-name">'+esc(commits[l].commit.message.split('\n')[0].substring(0,50))+'</span><span class="item-meta">'+(commits[l].commit.author&&commits[l].commit.author.name||'—')+'<br>'+fmt(commits[l].commit.author&&commits[l].commit.author.date)+'</span></div>';
+  if (commits.length) {
+    html += '<div class="section-title" style="margin-top:16px">🔁 Recent Commits</div>';
+    for (var l = 0; l < commits.length; l++) html += '<div class="list-item"><span class="item-name">' + esc(commits[l].commit.message.split('\n')[0].substring(0, 50)) + '</span><span class="item-meta">' + (commits[l].commit.author && commits[l].commit.author.name || '—') + '<br>' + fmt(commits[l].commit.author && commits[l].commit.author.date) + '</span></div>';
   }
-  if(contributors.length){
-    html+='<div class="section-title" style="margin-top:16px">👥 Contributors</div>';
-    for(var m=0;m<contributors.length;m++) html+='<div class="list-item"><span class="item-name">'+esc(contributors[m].login)+'</span><span class="item-meta">'+contributors[m].contributions+' commits</span></div>';
+  if (contributors.length) {
+    html += '<div class="section-title" style="margin-top:16px">👥 Contributors</div>';
+    for (var m = 0; m < contributors.length; m++) html += '<div class="list-item"><span class="item-name">' + esc(contributors[m].login) + '</span><span class="item-meta">' + contributors[m].contributions + ' commits</span></div>';
   }
-  document.getElementById('reportContent').innerHTML=html;
+  document.getElementById('reportContent').innerHTML = html;
 }
 
-function clearReport(){
+function clearReport() {
   hide('reportSt');
-  document.getElementById('reportContent').innerHTML='<div class="empty">Connect and click Generate Report</div>';
+  document.getElementById('reportContent').innerHTML = '<div class="empty">Connect and click Generate Report</div>';
 }
 
 // ==================== UTILS ====================
-function switchTab(name,el){
-  document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-  document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active');});
+function switchTab(name, el) {
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.panel').forEach(function(p){ p.classList.remove('active'); });
   el.classList.add('active');
-  document.getElementById('panel-'+name).classList.add('active');
+  document.getElementById('panel-' + name).classList.add('active');
 }
 
-function setSt(id,type,msg){
-  var el=document.getElementById(id);
-  el.className='st show '+type;
-  el.innerHTML=type==='loading'?'<span class="spinner"></span>'+msg:msg;
+function setSt(id, type, msg) {
+  var el = document.getElementById(id);
+  el.className = 'st show ' + type;
+  el.innerHTML = type === 'loading' ? '<span class="spinner"></span>' + msg : msg;
 }
-function hide(id){document.getElementById(id).className='st';}
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function hide(id){ document.getElementById(id).className = 'st'; }
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function resetAll(){
-  if(confirm('Reset saved credentials?')){localStorage.clear();location.reload();}
+  if (confirm('Reset saved credentials?')){ localStorage.clear(); location.reload(); }
 }
 </script>
 </body>
